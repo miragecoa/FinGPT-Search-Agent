@@ -6,9 +6,9 @@ import os
 import openai
 from googlesearch import search
 from urllib.parse import urljoin
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from accelerate import init_empty_weights, load_checkpoint_and_dispatch
-import torch
+# from transformers import AutoTokenizer, AutoModelForCausalLM
+# from accelerate import init_empty_weights, load_checkpoint_and_dispatch
+# import torch
 from . import cdm_rag
 
 load_dotenv()

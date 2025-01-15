@@ -8,7 +8,7 @@ from django.http import HttpResponse
 import os
 import csv
 import request
-from transformers import AutoTokenizer, AutoModelForCausalLM
+# from transformers import AutoTokenizer, AutoModelForCausalLM
 
 message_list = [
     {"role": "system",
