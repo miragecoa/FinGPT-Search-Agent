@@ -237,18 +237,25 @@ def create_response(user_input, message_list, model="o1-preview"):
     openai.api_key = api_key
     print("starting creation")
 
-    message_list.append({"role": "user", "content": user_input})
+    # Update message_list for unsupported system role
+    # Filter out 'system' role messages if the model does not support them
+    filtered_message_list = [msg for msg in message_list if msg["role"] != "system"]
 
+    # Append user input
+    filtered_message_list.append({"role": "user", "content": user_input})
+
+    # Make the API call
     completion = openai.ChatCompletion.create(
         model=model,
-        messages=message_list,
+        messages=filtered_message_list,
     )
 
     print(completion.choices[0].message.content)
 
-    message_list.append({"role": "system", "content": completion.choices[0].message.content})
+    filtered_message_list.append({"role": "assistant", "content": completion.choices[0].message.content})
 
     return completion.choices[0].message.content
+
 
 
 def create_advanced_response(user_input, message_list, model="o1-preview"):

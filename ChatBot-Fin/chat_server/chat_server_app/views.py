@@ -11,9 +11,10 @@ import request
 # from transformers import AutoTokenizer, AutoModelForCausalLM
 
 message_list = [
-    {"role": "system",
+    {"role": "user",
      "content": "You are a helpful financial assistant. Always answer questions to the best of your ability."},
 ]
+
 
 
 # View to return a random number as JSON
