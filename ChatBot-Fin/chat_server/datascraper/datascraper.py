@@ -229,7 +229,7 @@ def create_rag_advanced_response(user_input, message_list, model):
 #     return response
 
 
-def create_response(user_input, message_list, model="gpt-4o"):
+def create_response(user_input, message_list, model="o1-preview"):
     """
     Creates a response using OpenAI's API and a specified model.
     """
@@ -251,7 +251,7 @@ def create_response(user_input, message_list, model="gpt-4o"):
     return completion.choices[0].message.content
 
 
-def create_advanced_response(user_input, message_list, model="gpt-4o"):
+def create_advanced_response(user_input, message_list, model="o1-preview"):
     """
     Creates an advanced response by searching through user-preferred URLs first,
     and then falling back to a general web search using the specified model.

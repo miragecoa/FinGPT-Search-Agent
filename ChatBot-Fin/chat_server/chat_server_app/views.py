@@ -46,7 +46,7 @@ def Get_A_Number(request):
 # Ask button
 def chat_response(request):
     question = request.GET.get('question', '')
-    selected_models = request.GET.get('models', 'gpt-4o,gpt-3.5-turbo')
+    selected_models = request.GET.get('models', 'o1-preview,gpt-4o')
     models = selected_models.split(',')
     use_rag = request.GET.get('use_rag', 'false').lower() == 'true'
 
@@ -75,7 +75,7 @@ def chat_response(request):
 @csrf_exempt
 def adv_response(request):
     question = request.GET.get('question', '')
-    selected_models = request.GET.get('models', 'gpt-4o,gpt-3.5-turbo')
+    selected_models = request.GET.get('models', 'o1-preview,gpt-4o')
     models = selected_models.split(',')
     use_rag = request.GET.get('use_rag', 'false').lower() == 'true'
 
