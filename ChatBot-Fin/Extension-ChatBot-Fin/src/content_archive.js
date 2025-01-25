@@ -257,12 +257,6 @@ iconContainer.id = "icon-container";
 const settingsIcon = document.createElement('span');
 settingsIcon.innerText = "⚙️";
 settingsIcon.className = "icon";
-settingsIcon.onclick = function() {
-    const rect = settingsIcon.getBoundingClientRect();
-    settings_window.style.top = `${rect.bottom}px`;
-    settings_window.style.left = `${rect.left}px`;
-    settings_window.style.display = settings_window.style.display === 'none' ? 'block' : 'none';
-};
 
 const minimizeIcon = document.createElement('span');
 minimizeIcon.innerText = "➖";
@@ -611,11 +605,14 @@ preferredLinksHeader.onclick = function() {
 };
 
 // Load preferred links when settings are opened
-settingsIcon.onclick = function() {
+settingsIcon.onclick = function(event) {
+    event.stopPropagation();
+
     const rect = settingsIcon.getBoundingClientRect();
     settings_window.style.top = `${rect.bottom}px`;
     settings_window.style.left = `${rect.left}px`;
-    settings_window.style.display = settings_window.style.display === 'none' ? 'block' : 'none';
+    settings_window.style.display =
+        settings_window.style.display === 'none' ? 'block' : 'none';
 
     // Load preferred links
     if (settings_window.style.display === 'block') {
@@ -623,10 +620,15 @@ settingsIcon.onclick = function() {
     }
 };
 
+
 // Close settings popup when clicks outside
 document.addEventListener('click', function(event) {
     const settingsWindow = document.getElementById('settings_window');
-    if (settingsWindow.style.display === 'block' && !settingsWindow.contains(event.target) && !settingsIcon.contains(event.target)) {
+    if (
+        settingsWindow.style.display === 'block' &&
+        !settingsWindow.contains(event.target) &&
+        !settingsIcon.contains(event.target)
+    ) {
         settingsWindow.style.display = 'none';
     }
 });
