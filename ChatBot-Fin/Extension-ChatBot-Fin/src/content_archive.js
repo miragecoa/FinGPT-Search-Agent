@@ -74,8 +74,8 @@ function handleChatResponse(question, isAdvanced = false) {
     appendChatElement(responseContainer, 'your_question', question);
     appendChatElement(additionalResponseContainer, 'your_question', question);
 
-    const mainLoadingElement = appendChatElement(responseContainer, 'agent_response', `${selectedModels[0]}: Loading...`);
-    const additionalLoadingElement = appendChatElement(additionalResponseContainer, 'agent_response', `${selectedModels[1]}: Loading...`);
+    const mainLoadingElement = appendChatElement(responseContainer, 'agent_response', `FinGPT #1: Loading...`);
+    const additionalLoadingElement = appendChatElement(additionalResponseContainer, 'agent_response', `FinGPT #2: Loading...`);
 
     const encodedQuestion = encodeURIComponent(question);
 
@@ -96,15 +96,15 @@ function handleChatResponse(question, isAdvanced = false) {
             const additionalResponse = data.resp[selectedModels[1]];
 
             if (mainResponse.startsWith("The following file(s) are missing")) {
-                mainLoadingElement.innerText = `${selectedModels[0]}: Error - ${mainResponse}`;
+                mainLoadingElement.innerText = `FinGPT #1: Error - ${mainResponse}`;
             } else {
-                mainLoadingElement.innerText = `${selectedModels[0]}: ${mainResponse}`;
+                mainLoadingElement.innerText = `FinGPT #1: ${mainResponse}`;
             }
 
             if (additionalResponse.startsWith("The following file(s) are missing")) {
-                additionalLoadingElement.innerText = `${selectedModels[1]}: Error - ${additionalResponse}`;
+                additionalLoadingElement.innerText = `FinGPT #2: Error - ${additionalResponse}`;
             } else {
-                additionalLoadingElement.innerText = `${selectedModels[1]}: ${additionalResponse}`;
+                additionalLoadingElement.innerText = `FinGPT #2: ${additionalResponse}`;
             }
 
             document.getElementById('textbox').value = '';
@@ -113,8 +113,8 @@ function handleChatResponse(question, isAdvanced = false) {
         .catch(error => {
             console.error('There was a problem with your fetch operation:', error);
 
-            mainLoadingElement.innerText = `${selectedModels[0]}: Failed to load response.`;
-            additionalLoadingElement.innerText = `${selectedModels[1]}: Failed to load response.`;
+            mainLoadingElement.innerText = `FinGPT #1: Failed to load response.`;
+            additionalLoadingElement.innerText = `FinGPT #2: Failed to load response.`;
         });
 }
 
@@ -411,7 +411,7 @@ additionalHeader.id = "additionalHeader";
 additionalHeader.className = "draggable";
 
 const additionalTitle = document.createElement('span');
-additionalTitle.innerText = "gpt-3.5-turbo Response";
+additionalTitle.innerText = "FinGPT Model #2";
 
 additionalHeader.appendChild(additionalTitle);
 additionalPopup.appendChild(additionalHeader);
