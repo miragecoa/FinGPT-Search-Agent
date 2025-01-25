@@ -4,7 +4,6 @@
     position: absolute;
     width: 450px;
     height: 650px;
-    /* Removed top and left properties */
     background-color: #333;
     border-radius: 15px;
     box-shadow: 5px 0px 10px black;
@@ -92,7 +91,7 @@
     justify-content: center;
 }
 
-/* Input Container for Mode Buttons */
+/* Input Container */
 #inputContainer {
     display: flex;
     flex-direction: column;
@@ -140,12 +139,12 @@
     padding: 10px;
 }
 
-/* Makes the textbox border colored */
 #inputContainer input[type="text"]:focus {
     outline: none;
     border-color: #1abc9c;
 }
 
+/* Button Container */
 #buttonContainer {
     display: flex;
     justify-content: center;
@@ -166,6 +165,7 @@
     background-color: #555;
 }
 
+/* Response Container */
 #respons {
     display: flex;
     flex-direction: column;
@@ -236,249 +236,119 @@
     display: none;
 }
 
-/* Sources Window for Sources Button */
-#sources_window {
-    text-align: left;
+/* SETTINGS WINDOW */
+#settings_window {
     position: absolute;
-    width: 450px;
-    height: 600px;
-    top: 10%;
-    left: 29%;
-    background-color: #2c3e50;
+    background-color: #333;      /* Same dark background as main popup */
+    color: #fff;                 /* White text */
     border-radius: 15px;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
-    overflow-y: auto;
-    z-index: 10001;
-    color: white;
+    box-shadow: 5px 0px 10px black;
     padding: 20px;
-    resize: both;
-    cursor: default;
+    display: none;               /* Hidden by default */
+    z-index: 20000;             /* Above main popup (which has z-index: 10000) */
+    width: 300px;                /* Adjust as needed */
+    min-width: 200px;            /* Some sensible minimum */
+    user-select: text;
+    overflow-y: auto;            /* In case content grows */
+    max-height: 80vh;            /* Constrain the max height */
 }
 
-#sources_window::-webkit-scrollbar {
-    width: 12px;
+/* HEADERS OR SECTION TITLES INSIDE SETTINGS */
+#model_selection_header,
+#preferred_links_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: bold;
+    margin-bottom: 10px;
+    cursor: pointer; /* So the user knows it's clickable to toggle the section */
 }
 
-#sources_window::-webkit-scrollbar-track {
-    background: none;
+/* TOGGLE ARROW ICONS (⯆ or ⯅) */
+#model_selection_header span,
+#preferred_links_header span {
+    margin-left: 8px;
+    font-size: 1.2em;
 }
 
-#sources_window::-webkit-scrollbar-thumb {
-    background-color: #888;
-    border-radius: 10px;
-    border: 3px solid transparent;
-    background-clip: padding-box;
+/* SETTINGS WINDOW BUTTONS */
+#settings_window button,
+#settings_window .settings-button {
+    background-color: #444;      /* Grey-like main popups */
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: white;
+    cursor: pointer;
+    margin: 4px 0;
+    display: inline-block;
+    font-size: 0.9em;
+    transition: background-color 0.2s ease-in-out;
 }
 
-#sources_window::-webkit-scrollbar-thumb:hover {
+#settings_window button:hover,
+#settings_window .settings-button:hover {
+    background-color: #555;      /* Darker hover color */
+}
+
+/* MODEL SELECTION ITEMS */
+.model-selection-item {
+    background-color: #444;      /* Make it look like a "button" or pill */
+    color: #fff;
+    padding: 8px 12px;
+    margin: 4px 0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+}
+
+/* Hover effect when not selected */
+.model-selection-item:hover {
     background-color: #555;
 }
 
-#sources_window_header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 2px solid #34495e;
-    padding-bottom: 10px;
-    margin-bottom: 20px;
-    /* cursor: move; */
-    /* cursor: grab; change cursor to indicate draggable area */
+/* Highlight selected items with the green/cyan color (#1abc9c) */
+.selected-model {
+    background-color: #1abc9c !important;
+    color: #fff !important;
 }
 
-/*
-#sources_window_header:active {
-    cursor: grabbing;
-}
-*/
-
-#sources_window_header h2 {
-    font-size: 1.5em;
-    font-weight: bold;
-    margin: 0;
-}
-
-#sources_window_header .icon {
-    cursor: pointer;
-    font-size: 1.5em;
-    color: #ecf0f1;
-}
-
-#sources_window ul {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-}
-
-#sources_window ul li {
-    margin: 10px 0;
-}
-
-#sources_window ul li a {
-    color: #1abc9c;
-    text-decoration: none;
-    font-weight: 500;
-    word-wrap: break-word;
-}
-
-#sources_window ul li a:hover {
-    text-decoration: underline;
-}
-
-.source-item {
-    background-color: #34495e;
-    border-radius: 10px;
-    padding: 15px;
-    margin: 10px 0;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    transition: background-color 0.3s ease, transform 0.3s ease;
-    word-wrap: break-word;
-}
-
-.source-item:hover {
-    transform: translateY(-5px);
-}
-
-/* loading animation for source */
-.spinner {
-    border: 8px solid #f3f3f3;
-    border-top: 8px solid #3498db;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    animation: spin 2s linear infinite;
-    margin: 20px auto; /* centering */
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Settings Window */
-#settings_window {
-    position: absolute;
-    top: 50px;
-    right: 20px;
-    width: 450px;
-    height: auto;
-    background-color: #2c3e50;
-    border-radius: 15px;
-    box-shadow: 0px 0px 10px black;
-    z-index: 10002;
-    color: white;
-    padding: 20px;
-    display: none;
-}
-
-#settings_window label {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-#settings_window input[type="checkbox"] {
-    width: 40px;
-    height: 20px;
-}
-
-/* Model Selection Section */
-#model_selection_container {
-    margin-top: 20px;
-    background-color: #34495e;
-    border-radius: 10px;
-    padding: 10px;
-    cursor: pointer;
-}
-
-#model_selection_header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 1.2em;
-    font-weight: bold;
-}
-
-#model_selection_content {
-    display: none;
-    margin-top: 10px;
-}
-
-.model-selection-item {
-    background-color: #2C3E50;
-    border-radius: 10px;
-    padding: 15px;
-    margin: 10px 0;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    transition: background-color 0.3s ease, transform 0.3s ease;
-    word-wrap: break-word;
-    cursor: pointer;
-}
-
-.model-selection-item.selected-model {
-    background-color: #1abc9c; /* Highlight selected models */
-    color: white;
-}
-
-.model-selection-item:hover {
-    transform: translateY(-5px);
-}
-
-/* Preferred Links Section */
-#preferred_links_container {
-    margin-top: 20px;
-    background-color: #34495e;
-    border-radius: 10px;
-    padding: 10px;
-    cursor: pointer;
-}
-
-#preferred_links_header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 1.2em;
-    font-weight: bold;
-}
-
+/* PREFERRED LINKS CONTAINER */
 #preferred_links_content {
-    display: none;
-    margin-top: 10px;
+    margin: 10px 0;
+    display: none; /* Collapsed by default - toggled via JS */
 }
 
+/* PREFERRED LINK ITEMS */
 .preferred-link-item {
-    background-color: #2C3E50;
-    border-radius: 10px;
-    padding: 15px;
-    margin: 10px 0;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    transition: background-color 0.3s ease, transform 0.3s ease;
-    word-wrap: break-word;
+    background-color: #444;
+    margin: 4px 0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: default;  /* Usually just for display, unless you want clicks */
 }
 
+/* Hover effect for link items */
 .preferred-link-item:hover {
-    transform: translateY(-5px);
+    background-color: #555;
 }
 
+/* ADD LINK (+) BUTTON */
 #add_link_button {
-    background-color: #2C3E50;
-    border: none;
-    border-radius: 10px;
-    padding: 15px;
-    margin: 10px 0;
-    color: white;
-    text-align: center;
+    display: inline-block;
+    background-color: #444;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin: 4px 0;
     cursor: pointer;
+    font-size: 1.1em;     /* Slightly bigger for emphasis */
+    transition: background-color 0.2s ease-in-out;
 }
 
-
-
-
-
-
-
-
-
+#add_link_button:hover {
+    background-color: #555;
+}
 
 
 /* Additional Popup Container */
@@ -487,7 +357,6 @@
     position: absolute;
     width: 450px;
     height: 650px;
-    /* Removed top and left properties */
     background-color: #333;
     border-radius: 15px;
     box-shadow: 5px 0px 10px black;
@@ -503,7 +372,7 @@
     user-select: text;
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar for Additional Popup */
 #additionalPopup::-webkit-scrollbar {
     width: 12px;
 }
@@ -523,7 +392,7 @@
     background-color: #555;
 }
 
-/* Header */
+/* Additional Header */
 #additionalHeader {
     display: flex;
     justify-content: space-between;
@@ -538,7 +407,7 @@
     font-weight: bold;
 }
 
-/* Content Area */
+/* Additional Content Area */
 #additionalContent {
     flex: 1;
     display: flex;
@@ -546,118 +415,119 @@
     justify-content: center;
 }
 
-/* Response */
+/* Responses in Additional Popup */
 #additionalPopup #respons {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    text-align: left;
-    border-radius: 10px;
-    padding: 8px 15px;
-    color: #fff;
-    word-wrap: break-word;
-    margin-right: auto;
 }
 
-.your_question {
-    align-self: flex-end;
-    text-align: right;
+#additionalPopup #respons .your_question,
+#additionalPopup #respons .agent_response {
+    align-self: flex-start;
+    text-align: left;
     background-color: #444;
     border-radius: 10px;
     padding: 8px 15px;
     color: #fff;
     word-wrap: break-word;
     max-width: 80%;
-    margin-left: auto;
+    margin-top: 10px;
 }
-
-.agent_response {
-    align-self: flex-start;
-    text-align: left;
-    border-radius: 10px;
-    padding: 8px 15px;
-    color: #fff;
-    word-wrap: break-word;
-    margin-right: auto;
-}
-
-/* additional pop up to the right of the main pop up */
-/*#additionalPopup {*/
-/*    left: calc(100% + 20px);*/
-/*    top: 10%;*/
-/*}*/
-
-/*#additionalPopup #respons .agent_response {*/
-/*    align-self: flex-start;*/
-/*    text-align: left;*/
-/*    border-radius: 10px;*/
-/*    padding: 8px 15px;*/
-/*    color: #fff;*/
-/*    word-wrap: break-word;*/
-/*    margin-right: auto;*/
-/*}*/
-
-
-
-
-
-
-
-
-
-
-
 
 /* Light Mode Styles */
 .light-mode #draggableElement,
+.light-mode #additionalPopup,
 .light-mode #sources_window {
     background-color: #ddd;
     color: black;
 }
 
-.light-mode #inputContainer {
-    background-color: #ddd;
+.light-mode #inputContainer input[type="text"] {
+    background-color: white;
+    color: black;
+    border: 1px solid #ccc;
 }
 
 .light-mode #header,
+.light-mode #additionalHeader,
 .light-mode #sources_window_header {
     background-color: #ddd;
 }
 
-.light-mode #buttonContainer button {
-    color: white; /* Button text remains white */
-}
-
-.light-mode .clear-button,
-.light-mode .sources-button {
-    color: white; /* Button text remains white */
-}
-
-/* Light Mode for Title Text */
-.light-mode #draggableElement h2 {
+.light-mode .mode-button {
+    background-color: #eee;
     color: black;
 }
 
-/* Light Mode for Additional Popup */
-.light-mode #additionalPopup {
-    background-color: #ddd; /* Light background color */
-    color: black; /* Text color */
-    border: 1px solid #ddd; /* Optional border for better contrast */
+.light-mode .mode-button:hover {
+    background-color: #ddd;
 }
 
-.light-mode #additionalHeader {
+.light-mode .active-mode {
+    background-color: #1abc9c;
+    color: white;
+}
+
+.light-mode #buttonContainer button,
+.light-mode .clear-button,
+.light-mode .sources-button {
+    background-color: #eee;
+    color: black;
+}
+
+.light-mode #buttonContainer button:hover,
+.light-mode .clear-button:hover,
+.light-mode .sources-button:hover {
+    background-color: #ddd;
+}
+
+.light-mode #respons .your_question,
+.light-mode #respons .agent_response,
+.light-mode #additionalPopup #respons .your_question,
+.light-mode #additionalPopup #respons .agent_response {
+    background-color: #eee;
+    color: black;
+}
+
+.light-mode .source-item {
+    background-color: #f0f0f0;
+}
+
+.light-mode .source-item:hover {
+    background-color: #e0e0e0;
+}
+
+.light-mode .preferred-link-item,
+.light-mode #add_link_button {
+    background-color: #f0f0f0;
+    color: black;
+}
+
+.light-mode .preferred-link-item:hover,
+.light-mode #add_link_button:hover {
+    background-color: #e0e0e0;
+}
+
+/* Settings Windows */
+.light-mode #settings_window {
     background-color: #ddd;
     color: black;
 }
-
-.light-mode #additionalContent {
-    background-color: #ddd; /* Slightly lighter content background */
+.light-mode #settings_window button,
+.light-mode #settings_window .model-selection-item,
+.light-mode .preferred-link-item,
+.light-mode #add_link_button {
+    background-color: #eee;
     color: black;
 }
-
-/* Light Mode Input Box */
-.light-mode #inputContainer input {
-    color: black;
-    background-color: #eee;
-    border: 1px solid #ccc;
+.light-mode #settings_window button:hover,
+.light-mode #settings_window .model-selection-item:hover,
+.light-mode .preferred-link-item:hover,
+.light-mode #add_link_button:hover {
+    background-color: #ddd;
+}
+.light-mode .selected-model {
+    background-color: #1abc9c !important;
+    color: white !important;
 }

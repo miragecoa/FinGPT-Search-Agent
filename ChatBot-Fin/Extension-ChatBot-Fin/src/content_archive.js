@@ -7,17 +7,17 @@ const textContent = document.body.innerText;
 const encodedContent = encodeURIComponent(textContent);
 
 // Available models
-const availableModels = ["gpt-4o", "gpt-3.5-turbo"];
+const availableModels = ["o1-preview", "gpt-4o"];
 
-// Initialize model selection with gpt-4o and gpt-3.5-turbo as default
-let selectedModels = ['gpt-4o', 'gpt-3.5-turbo'];
+// Initialize model selection
+let selectedModels = ['o1-preview', 'gpt-4o'];
 
 function getSelectedModels() {
     return selectedModels;
 }
 
 // Fetch the text content
-fetch(`https://fingptbackend-ejcrcydrg8hjb7ea.eastus2-01.azurewebsites.net/input_webtext/?textContent=${encodedContent}`, { method: "POST" })
+fetch(`http://127.0.0.1:8000/input_webtext/?textContent=${encodedContent}`, { method: "POST" })
     .then(response => {
         if (!response.ok) {
             throw new Error('Network response was not ok');
@@ -49,8 +49,8 @@ function handleChatResponse(question, isAdvanced = false) {
     appendChatElement(responseContainer, 'your_question', question);
     appendChatElement(additionalResponseContainer, 'your_question', question);
 
-    const mainLoadingElement = appendChatElement(responseContainer, 'agent_response', `${selectedModels[0]}: Loading...`);
-    const additionalLoadingElement = appendChatElement(additionalResponseContainer, 'agent_response', `${selectedModels[1]}: Loading...`);
+    const mainLoadingElement = appendChatElement(responseContainer, 'agent_response', `FinGPT #1: Loading...`);
+    const additionalLoadingElement = appendChatElement(additionalResponseContainer, 'agent_response', `FinGPT #2: Loading...`);
 
     const encodedQuestion = encodeURIComponent(question);
 
@@ -59,7 +59,7 @@ function handleChatResponse(question, isAdvanced = false) {
     // Read the RAG checkbox state
     const useRAG = document.getElementById('ragSwitch').checked;
 
-    fetch(`https://fingptbackend-ejcrcydrg8hjb7ea.eastus2-01.azurewebsites.net/${endpoint}/?question=${encodedQuestion}&models=${selectedModels.join(',')}&is_advanced=${isAdvanced}&use_rag=${useRAG}`, { method: 'GET' })
+    fetch(`http://127.0.0.1:8000/${endpoint}/?question=${encodedQuestion}&models=${selectedModels.join(',')}&is_advanced=${isAdvanced}&use_rag=${useRAG}`, { method: 'GET' })
         .then(response => response.json())
         .then(data => {
             const endTime = performance.now();
@@ -71,15 +71,15 @@ function handleChatResponse(question, isAdvanced = false) {
             const additionalResponse = data.resp[selectedModels[1]];
 
             if (mainResponse.startsWith("The following file(s) are missing")) {
-                mainLoadingElement.innerText = `${selectedModels[0]}: Error - ${mainResponse}`;
+                mainLoadingElement.innerText = `FinGPT #1: Error - ${mainResponse}`;
             } else {
-                mainLoadingElement.innerText = `FinGPT Model #1: ${mainResponse}`;
+                mainLoadingElement.innerText = `FinGPT #2: ${mainResponse}`;
             }
 
             if (additionalResponse.startsWith("The following file(s) are missing")) {
-                additionalLoadingElement.innerText = `${selectedModels[1]}: Error - ${additionalResponse}`;
+                additionalLoadingElement.innerText = `FinGPT #1: Error - ${additionalResponse}`;
             } else {
-                additionalLoadingElement.innerText = `FinGPT Model #2: ${additionalResponse}`;
+                additionalLoadingElement.innerText = `FinGPT #2: ${additionalResponse}`;
             }
 
             document.getElementById('textbox').value = '';
@@ -88,8 +88,8 @@ function handleChatResponse(question, isAdvanced = false) {
         .catch(error => {
             console.error('There was a problem with your fetch operation:', error);
 
-            mainLoadingElement.innerText = `${selectedModels[0]}: Failed to load response.`;
-            additionalLoadingElement.innerText = `${selectedModels[1]}: Failed to load response.`;
+            mainLoadingElement.innerText = `FinGPT #1: Failed to load response.`;
+            additionalLoadingElement.innerText = `FinGPT #2: Failed to load response.`;
         });
 }
 
@@ -120,7 +120,7 @@ function get_adv_chat_response() {
     if (isImageMode) {
         // Image Processing Mode
         // Send a request to process the image with the text prompt
-        fetch('https://fingptbackend-ejcrcydrg8hjb7ea.eastus2-01.azurewebsites.net/process_image/', {
+        fetch('http://127.0.0.1:8000/process_image/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 'text_prompt': question })
@@ -166,7 +166,7 @@ function clear() {
     if (sourceurls) {
         sourceurls.innerHTML = "";
     }
-    fetch(`https://fingptbackend-ejcrcydrg8hjb7ea.eastus2-01.azurewebsites.net/clear_messages/`, { method: "POST" })
+    fetch(`http://127.0.0.1:8000/clear_messages/`, { method: "POST" })
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -191,7 +191,7 @@ function get_sources(search_query) {
     loadingSpinner.style.display = 'block'; // Show the spinner
     source_urls.style.display = 'none'; // Hide the source list initially
 
-    fetch(`https://fingptbackend-ejcrcydrg8hjb7ea.eastus2-01.azurewebsites.net/get_source_urls/?query=${String(search_query)}`, { method: "GET" })
+    fetch(`http://127.0.0.1:8000/get_source_urls/?query=${String(search_query)}`, { method: "GET" })
         .then(response => response.json())
         .then(data => {
             console.log(data["resp"]);
@@ -225,7 +225,7 @@ function get_sources(search_query) {
 function logQuestion(question, button) {
     const currentUrl = window.location.href;
 
-    fetch(`https://fingptbackend-ejcrcydrg8hjb7ea.eastus2-01.azurewebsites.net/log_question/?question=${encodeURIComponent(question)}&button=${encodeURIComponent(button)}&current_url=${encodeURIComponent(currentUrl)}`,
+    fetch(`http://127.0.0.1:8000/log_question/?question=${encodeURIComponent(question)}&button=${encodeURIComponent(button)}&current_url=${encodeURIComponent(currentUrl)}`,
         { method: "GET" })
         .then(response => response.json())
         .then(data => {
@@ -257,12 +257,6 @@ iconContainer.id = "icon-container";
 const settingsIcon = document.createElement('span');
 settingsIcon.innerText = "⚙️";
 settingsIcon.className = "icon";
-settingsIcon.onclick = function() {
-    const rect = settingsIcon.getBoundingClientRect();
-    settings_window.style.top = `${rect.bottom}px`;
-    settings_window.style.left = `${rect.left}px`;
-    settings_window.style.display = settings_window.style.display === 'none' ? 'block' : 'none';
-};
 
 const minimizeIcon = document.createElement('span');
 minimizeIcon.innerText = "➖";
@@ -280,7 +274,7 @@ minimizeIcon.onclick = function() {
 const closeIcon = document.createElement('span');
 closeIcon.innerText = "❌";
 closeIcon.className = "icon";
-closeIcon.onclick = function() { 
+closeIcon.onclick = function() {
     popup.style.display = 'none';
     additionalPopup.style.display = 'none';
 };
@@ -538,7 +532,7 @@ addLinkButton.onclick = function() {
     const newLink = prompt("Enter a new preferred URL:");
     if (newLink) {
         // Send the new link to the backend
-        fetch('https://fingptbackend-ejcrcydrg8hjb7ea.eastus2-01.azurewebsites.net/api/add_preferred_url/', {
+        fetch('http://127.0.0.1:8000/api/add_preferred_url/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -562,7 +556,7 @@ addLinkButton.onclick = function() {
 
 // Load existing preferred links when the settings window is opened
 function loadPreferredLinks() {
-    fetch('https://fingptbackend-ejcrcydrg8hjb7ea.eastus2-01.azurewebsites.net/api/get_preferred_urls/')
+    fetch('http://127.0.0.1:8000/api/get_preferred_urls/')
         .then(response => response.json())
         .then(data => {
             preferredLinksContent.innerHTML = ''; // Clear existing content
@@ -611,11 +605,14 @@ preferredLinksHeader.onclick = function() {
 };
 
 // Load preferred links when settings are opened
-settingsIcon.onclick = function() {
+settingsIcon.onclick = function(event) {
+    event.stopPropagation();
+
     const rect = settingsIcon.getBoundingClientRect();
     settings_window.style.top = `${rect.bottom}px`;
     settings_window.style.left = `${rect.left}px`;
-    settings_window.style.display = settings_window.style.display === 'none' ? 'block' : 'none';
+    settings_window.style.display =
+        settings_window.style.display === 'none' ? 'block' : 'none';
 
     // Load preferred links
     if (settings_window.style.display === 'block') {
@@ -623,10 +620,15 @@ settingsIcon.onclick = function() {
     }
 };
 
+
 // Close settings popup when clicks outside
 document.addEventListener('click', function(event) {
     const settingsWindow = document.getElementById('settings_window');
-    if (settingsWindow.style.display === 'block' && !settingsWindow.contains(event.target) && !settingsIcon.contains(event.target)) {
+    if (
+        settingsWindow.style.display === 'block' &&
+        !settingsWindow.contains(event.target) &&
+        !settingsIcon.contains(event.target)
+    ) {
         settingsWindow.style.display = 'none';
     }
 });

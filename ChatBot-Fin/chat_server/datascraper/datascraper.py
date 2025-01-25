@@ -4,57 +4,38 @@ import requests
 from bs4 import BeautifulSoup
 import os
 import openai
-import base64
 from googlesearch import search
 from urllib.parse import urljoin
-from django.conf import settings
+# from transformers import AutoTokenizer, AutoModelForCausalLM
+# from accelerate import init_empty_weights, load_checkpoint_and_dispatch
+# import torch
 from . import cdm_rag
 
-# api_key = settings.OPENAI_API_KEY
-openai.api_type = "azure"
-openai.api_base = "https://apiforfingpt.openai.azure.com/"
-openai.api_version = "2024-08-06"
+load_dotenv()
+api_key = os.getenv("API_KEY7")
 
-openai.api_key = os.getenv("AZURE_OPENAI_API_KEY")
-
-model_deployment = "gpt-4o"
 
 def data_scrape(url, timeout=2):
     try:
         start_time = time.time()
-        headers = {
-            "User-Agent": "Mozilla/5.0"
-        }
-        response = requests.get(url, headers=headers, timeout=timeout)
+        response = requests.get(url, timeout=timeout)
         end_time = time.time()
         elapsed_time = end_time - start_time
 
         if response.status_code == 200:
+            print("Successful response: ", url)
             if elapsed_time > timeout:
-                print("Request took more than", timeout, "seconds. Skipping:", url)
+                print("Request took more than 2 seconds. Skipping: ", url)
                 return -1
+            soup = BeautifulSoup(response.text, 'html.parser')
+            first_5000_characters = soup.text[:5000]
 
-            soup = BeautifulSoup(response.content, 'html.parser')
-
-            # Remove unwanted tags
-            for script_or_style in soup(['script', 'style', 'header', 'footer', 'nav', 'aside']):
-                script_or_style.decompose()
-
-            # For Yahoo Finance and Bloomberg specific elements
-            for unwanted in soup.select('.advertisement, .ad-container, .footer, .nav, .header'):
-                unwanted.decompose()
-
-            # Extract text
-            text = ' '.join(soup.stripped_strings)
-            first_5000_characters = text[:5000]
-
-            print("Successfully scraped:", url)
             return first_5000_characters
         else:
-            print('Failed to retrieve the page:', url)
+            print('Failed to retrieve the page: ', url)
             return -1
     except requests.exceptions.Timeout:
-        print('Request timed out after', timeout, 'seconds. Skipping:', url)
+        print('Request timed out after', timeout, 'seconds. Skipping: ', url)
         return -1
     except Exception as e:
         print('An error occurred:', str(e))
@@ -124,65 +105,170 @@ def search_websites_with_keyword(keyword):
 
     return message_list
 
-def create_rag_response(user_input, message_list):
+def create_rag_response(user_input, message_list, model):
     """
-    Generates a response using the RAG pipeline with Azure OpenAI Service.
-    """
-    try:
-        response = cdm_rag.get_rag_response(user_input, model_deployment)
-        message_list.append({"role": "assistant", "content": response})
-        return response
-    except FileNotFoundError as e:
-        error_message = str(e)
-        message_list.append({"role": "assistant", "content": error_message})
-        return error_message
-
-def create_rag_advanced_response(user_input, message_list):
-    """
-    Generates an advanced response using the RAG pipeline with Azure OpenAI Service.
+    Generates a response using the RAG pipeline.
     """
     try:
-        response = cdm_rag.get_rag_advanced_response(user_input, model_deployment)
-        message_list.append({"role": "assistant", "content": response})
+        response = cdm_rag.get_rag_response(user_input, model)
+        message_list.append({"role": "system", "content": response})
         return response
     except FileNotFoundError as e:
+        # Handle the error and return the error message
         error_message = str(e)
-        message_list.append({"role": "assistant", "content": error_message})
+        message_list.append({"role": "system", "content": error_message})
+        return error_message
+
+def create_rag_advanced_response(user_input, message_list, model):
+    """
+    Generates an advanced response using the RAG pipeline.
+    """
+    try:
+        response = cdm_rag.get_rag_advanced_response(user_input, model)
+        message_list.append({"role": "system", "content": response})
+        return response
+    except FileNotFoundError as e:
+        # Handle the error and return the error message
+        error_message = str(e)
+        message_list.append({"role": "system", "content": error_message})
         return error_message
 
 
-def create_response(user_input, message_list):
+
+# gemma_model_path = os.path.join(os.path.dirname(__file__), 'gemma-2-2b-it')
+# tokenizer = AutoTokenizer.from_pretrained(gemma_model_path)
+#
+# # Initialization
+# with init_empty_weights():
+#     model = AutoModelForCausalLM.from_pretrained(
+#         gemma_model_path,
+#         low_cpu_mem_usage=True,
+#         torch_dtype=torch.bfloat16  # model weights use bfloat16
+#     )
+#
+# # tie the model weights before dispatching
+# model.tie_weights()
+#
+# # Load the model with CPU offloading and layer dispatch to handle limited memory
+# model = load_checkpoint_and_dispatch(
+#     model,
+#     gemma_model_path,
+#     device_map={"": "cpu"},
+#     offload_state_dict=True
+# )
+
+
+# Gemma 2B - Modified response generation to work on CPU
+# def generate_gemma_response(message_list):
+#     # concatenated_input = " ".join([msg["content"] for msg in message_list])
+#     #
+#     # print(concatenated_input)
+#     #
+#     # # keep input_ids as LongTensor
+#     # inputs = tokenizer(concatenated_input, return_tensors="pt")
+#     # inputs = {key: value.to("cpu") for key, value in inputs.items()}
+#     #
+#     # # model weights are in bfloat16
+#     # outputs = model.generate(**inputs, max_length=6000)
+#     #
+#     # # Decode the generated output
+#     # full_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
+#     #
+#     # print("Output prior to stripping: " + full_output)
+#     full_output = "This is a mock output."
+#
+#     # response = full_output.replace(concatenated_input, "").strip()
+#
+#     return full_output
+#
+#
+# # Gemma 2B
+# def create_gemma_response(user_input, message_list):
+#     """
+#     Generates a response from the locally run Gemma 2B model.
+#     """
+#
+#     message_list.append({"role": "user", "content": user_input})
+#
+#     print("The received message list for response generation:", message_list)
+#
+#     response = generate_gemma_response(message_list)
+#     message_list.append({"role": "system", "content": response})
+#
+#     print(response)
+#     return response
+#
+#
+# # Gemma 2B
+# def create_gemma_advanced_response(user_input, message_list):
+#     """
+#     Generates an advanced response from the locally run Gemma 2B model,
+#     searching URLs before generating a response.
+#     """
+#
+#     message_list.append({"role": "user",
+#                          "content": "Answer the following question with the context provided below: " + user_input + "\n" + "Below is context: " + "\n"})
+#
+#     # Search in preferred URLs first
+#     print("Searching user preferred URLs")
+#     preferred_message_list = search_preferred_urls(user_input)  # URL searching logic
+#     message_list.extend(preferred_message_list)
+#
+#     # If no relevant information found, fall back to Gemma 2B response
+#     if not preferred_message_list:
+#         for url in search(user_input, num=10, stop=10, pause=0):
+#             info = data_scrape(url)
+#             if info != -1:
+#                 message_list.append({"role": "system", "content": "url: " + str(url) + " info: " + info})
+#
+#     print(message_list)
+#     response = generate_gemma_response(message_list)
+#
+#     message_list.append({"role": "system", "content": response})
+#
+#     return response
+
+
+def create_response(user_input, message_list, model="o1-preview"):
     """
-    Creates a response using Azure OpenAI Service and a specified deployment name.
+    Creates a response using OpenAI's API and a specified model.
     """
     print(message_list)
-    print("Starting creation")
+    openai.api_key = api_key
+    print("starting creation")
 
-    message_list.append({"role": "user", "content": user_input})
+    # Update message_list for unsupported system role
+    # Filter out 'system' role messages if the model does not support them
+    filtered_message_list = [msg for msg in message_list if msg["role"] != "system"]
 
+    # Append user input
+    filtered_message_list.append({"role": "user", "content": user_input})
+
+    # Make the API call
     completion = openai.ChatCompletion.create(
-        engine=model_deployment,  # Use 'engine' instead of 'model'
-        messages=message_list,
+        model=model,
+        messages=filtered_message_list,
     )
 
-    assistant_response = completion.choices[0].message.content
-    print(assistant_response)
+    print(completion.choices[0].message.content)
 
-    message_list.append({"role": "assistant", "content": assistant_response})
+    filtered_message_list.append({"role": "assistant", "content": completion.choices[0].message.content})
 
-    return assistant_response
+    return completion.choices[0].message.content
 
 
-def create_advanced_response(user_input, message_list):
+
+def create_advanced_response(user_input, message_list, model="o1-preview"):
     """
     Creates an advanced response by searching through user-preferred URLs first,
-    then falling back to a general web search using the specified deployment name.
+    and then falling back to a general web search using the specified model.
     """
     print(message_list)
-    print("Starting creation")
+    openai.api_key = api_key
+    print("starting creation")
 
     # Search in preferred URLs first
-    print("Searching user-preferred URLs")
+    print("Searching user preferred URLs")
     preferred_message_list = search_preferred_urls(user_input)
     message_list.extend(preferred_message_list)
 
@@ -191,52 +277,16 @@ def create_advanced_response(user_input, message_list):
         for url in search(user_input, num=10, stop=10, pause=0):
             info = data_scrape(url)
             if info != -1:
-                message_list.append({"role": "system", "content": f"url: {url} info: {info}"})
+                message_list.append({"role": "system", "content": "url: " + str(url) + " info: " + info})
 
     message_list.append({"role": "user", "content": user_input})
     completion = openai.ChatCompletion.create(
-        engine=model_deployment,  # Use 'engine' instead of 'model'
+        model=model,
         messages=message_list,
     )
-    assistant_response = completion.choices[0].message.content
-    print(assistant_response)
+    print(completion.choices[0].message.content)
 
-    return assistant_response
-
-def process_uploaded_file(file_path, text_prompt):
-    try:
-        # API key is already set globally; no need to set it again
-
-        # Construct the raw GitHub URL
-        username = 'FlyM1ss'
-        repository = 'FinGPT_for_RCOS'
-        branch = 'fingpt_for_sec'
-        path_to_file = os.path.relpath(file_path).replace('\\', '/')
-
-        image_url = f'https://raw.githubusercontent.com/{username}/{repository}/{branch}/{path_to_file}'
-
-        # Prepare the messages
-        messages = [
-            {
-                "role": "user",
-                "content": f"{text_prompt}\n\nPlease analyze the following image:\n{image_url}",
-            },
-        ]
-
-        # Create the chat completion
-        completion = openai.ChatCompletion.create(
-            engine="<your-image-model-deployment-name>",
-            messages=messages,
-        )
-
-        # Extract and return the response
-        answer = completion.choices[0].message.content
-        print(f"Assistant Response: {answer}")
-        return answer
-
-    except Exception as e:
-        print(f"Error processing image: {e}")
-        return f"An error occurred while processing the image: {e}"
+    return completion.choices[0].message.content
 
 
 def get_sources(query):
@@ -282,16 +332,12 @@ def get_website_icon(url):
 
 def handle_multiple_models(question, message_list, models):
     """
-    Handles responses from multiple model deployments and returns a dictionary with deployment names as keys.
+    Handles responses from multiple models and returns a dictionary with model names as keys.
     """
     responses = {}
-    for model_deployments in models:
-        if "advanced" in model_deployments:
-            responses[model_deployments] = create_advanced_response(
-                question, message_list.copy()
-            )
+    for model in models:
+        if "advanced" in model:
+            responses[model] = create_advanced_response(question, message_list.copy(), model)
         else:
-            responses[model_deployments] = create_response(
-                question, message_list.copy()
-            )
+            responses[model] = create_response(question, message_list.copy(), model)
     return responses

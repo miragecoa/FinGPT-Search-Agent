@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
-import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,10 +21,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-u0y2no-@d^b)#^4340wsu19^@d-oncpkh0nne8ha$*900_jvjd'
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["*", "https://*"]
 
@@ -63,14 +61,6 @@ CORS_ALLOWED_ORIGINS = [
     "https://finance.yahoo.com",
 
 ]
-
-CSRF_TRUSTED_ORIGINS = [
-    'https://fingptbackend-ejcrcydrg8hjb7ea.eastus2-01.azurewebsites.net',
-    "https://www.rpi.edu",
-    "https://www.bloomberg.com",
-    "https://finance.yahoo.com",
-]
-
 
 TEMPLATES = [
     {
@@ -142,6 +132,3 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

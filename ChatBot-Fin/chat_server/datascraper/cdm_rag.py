@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 import os
-import re
+# import re
 import pickle
 import numpy as np
 import faiss
@@ -73,7 +73,7 @@ def embed_query(query, model="text-embedding-3-large"):
     )
     return response['data'][0]['embedding']
 
-def retrieve_chunks(query, index, embeddings, k=5):
+def retrieve_chunks(query, index, embeddings, k=8):
     """
     Retrieves the most relevant text chunks for a given query.
     """
@@ -96,7 +96,7 @@ def generate_answer(query, relevant_chunks, model_name):
     for chunk in relevant_chunks:
         context += f"File: {chunk['metadata']['file_path']}\nContent:\n{chunk['text']}\n\n"
 
-    prompt = f"""You are an expert on SEC regulations and corporate filings. Provide detailed, accurate and well-structured answers.
+    prompt = f"""You are a CDM expert providing detailed and accurate answers.
 
 Context:
 {context}
@@ -113,8 +113,8 @@ Answer as thoroughly as possible based on the context provided."""
             {'role': 'system', 'content': 'You are a CDM expert providing detailed and accurate answers.'},
             {'role': 'user', 'content': prompt}
         ],
-        temperature=0.1,
-        max_tokens=2048  # adjust as needed
+        temperature=0.1,  # Lower temperature for more precise answers
+        max_tokens=1500  # Adjust as necessary
     )
 
     answer = response['choices'][0]['message']['content']
