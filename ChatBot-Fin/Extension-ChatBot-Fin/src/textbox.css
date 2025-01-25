@@ -236,6 +236,121 @@
     display: none;
 }
 
+/* SETTINGS WINDOW */
+#settings_window {
+    position: absolute;
+    background-color: #333;      /* Same dark background as main popup */
+    color: #fff;                 /* White text */
+    border-radius: 15px;
+    box-shadow: 5px 0px 10px black;
+    padding: 20px;
+    display: none;               /* Hidden by default */
+    z-index: 20000;             /* Above main popup (which has z-index: 10000) */
+    width: 300px;                /* Adjust as needed */
+    min-width: 200px;            /* Some sensible minimum */
+    user-select: text;
+    overflow-y: auto;            /* In case content grows */
+    max-height: 80vh;            /* Constrain the max height */
+}
+
+/* HEADERS OR SECTION TITLES INSIDE SETTINGS */
+#model_selection_header,
+#preferred_links_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: bold;
+    margin-bottom: 10px;
+    cursor: pointer; /* So the user knows it's clickable to toggle the section */
+}
+
+/* TOGGLE ARROW ICONS (⯆ or ⯅) */
+#model_selection_header span,
+#preferred_links_header span {
+    margin-left: 8px;
+    font-size: 1.2em;
+}
+
+/* SETTINGS WINDOW BUTTONS */
+#settings_window button,
+#settings_window .settings-button {
+    background-color: #444;      /* Grey-like main popups */
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: white;
+    cursor: pointer;
+    margin: 4px 0;
+    display: inline-block;
+    font-size: 0.9em;
+    transition: background-color 0.2s ease-in-out;
+}
+
+#settings_window button:hover,
+#settings_window .settings-button:hover {
+    background-color: #555;      /* Darker hover color */
+}
+
+/* MODEL SELECTION ITEMS */
+.model-selection-item {
+    background-color: #444;      /* Make it look like a "button" or pill */
+    color: #fff;
+    padding: 8px 12px;
+    margin: 4px 0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+}
+
+/* Hover effect when not selected */
+.model-selection-item:hover {
+    background-color: #555;
+}
+
+/* Highlight selected items with the green/cyan color (#1abc9c) */
+.selected-model {
+    background-color: #1abc9c !important;
+    color: #fff !important;
+}
+
+/* PREFERRED LINKS CONTAINER */
+#preferred_links_content {
+    margin: 10px 0;
+    display: none; /* Collapsed by default - toggled via JS */
+}
+
+/* PREFERRED LINK ITEMS */
+.preferred-link-item {
+    background-color: #444;
+    margin: 4px 0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: default;  /* Usually just for display, unless you want clicks */
+}
+
+/* Hover effect for link items */
+.preferred-link-item:hover {
+    background-color: #555;
+}
+
+/* ADD LINK (+) BUTTON */
+#add_link_button {
+    display: inline-block;
+    background-color: #444;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin: 4px 0;
+    cursor: pointer;
+    font-size: 1.1em;     /* Slightly bigger for emphasis */
+    transition: background-color 0.2s ease-in-out;
+}
+
+#add_link_button:hover {
+    background-color: #555;
+}
+
+
 /* Additional Popup Container */
 #additionalPopup {
     text-align: center;
@@ -392,4 +507,27 @@
 .light-mode .preferred-link-item:hover,
 .light-mode #add_link_button:hover {
     background-color: #e0e0e0;
+}
+
+/* Settings Windows */
+.light-mode #settings_window {
+    background-color: #ddd;
+    color: black;
+}
+.light-mode #settings_window button,
+.light-mode #settings_window .model-selection-item,
+.light-mode .preferred-link-item,
+.light-mode #add_link_button {
+    background-color: #eee;
+    color: black;
+}
+.light-mode #settings_window button:hover,
+.light-mode #settings_window .model-selection-item:hover,
+.light-mode .preferred-link-item:hover,
+.light-mode #add_link_button:hover {
+    background-color: #ddd;
+}
+.light-mode .selected-model {
+    background-color: #1abc9c !important;
+    color: white !important;
 }
