@@ -1,3 +1,5 @@
+// content_archive.js
+
 const currentUrl = window.location.href.toString();
 console.log(currentUrl);
 
@@ -7,42 +9,15 @@ const encodedContent = encodeURIComponent(textContent);
 // Available models
 const availableModels = ["o1-preview", "gpt-4o"];
 
-// Initialize model selection with gpt-4o as default
+// Initialize model selection
 let selectedModels = ['o1-preview', 'gpt-4o'];
 
 function getSelectedModels() {
-    return selectedModels;  // Now returns the actual selected models
+    return selectedModels;
 }
 
-// Model selection UI, I think, currently not in use
-function loadModelSelection() {
-    const modelButtons = document.querySelectorAll('.model-option');
-
-    modelButtons.forEach(button => {
-        const modelName = button.dataset.model;
-
-        // Default is gpt-4o
-        if (modelName === 'gpt-4o') {
-            button.classList.add('selected');
-        }
-
-        button.addEventListener('click', () => {
-            if (button.classList.contains('selected')) {
-                button.classList.remove('selected');
-                selectedModels = selectedModels.filter(model => model !== modelName);
-            } else {
-                if (selectedModels.length < 2) {
-                    button.classList.add('selected');
-                    selectedModels.push(modelName);
-                } else {
-                    alert('You can only select up to 2 models.');
-                }
-            }
-        });
-    });
-}
-
-fetch(`http://127.0.0.1:8000/input_webtext/?textContent=${encodedContent}`, { method: "POST" })
+// Fetch the text content
+fetch(`https://fingptbackend-ejcrcydrg8hjb7ea.eastus2-01.azurewebsites.net/input_webtext/?textContent=${encodedContent}`, { method: "POST" })
     .then(response => {
         if (!response.ok) {
             throw new Error('Network response was not ok');
@@ -56,7 +31,7 @@ fetch(`http://127.0.0.1:8000/input_webtext/?textContent=${encodedContent}`, { me
         console.error('There was a problem with your fetch operation:', error);
     });
 
-// create and append elements for the chat
+// Function to create and append chat elements
 function appendChatElement(parent, className, text) {
     const element = document.createElement('span');
     element.className = className;
@@ -65,7 +40,7 @@ function appendChatElement(parent, className, text) {
     return element;
 }
 
-// chat response
+// Function to handle chat responses
 function handleChatResponse(question, isAdvanced = false) {
     const startTime = performance.now();
     const responseContainer = document.getElementById('respons');
@@ -84,7 +59,7 @@ function handleChatResponse(question, isAdvanced = false) {
     // Read the RAG checkbox state
     const useRAG = document.getElementById('ragSwitch').checked;
 
-    fetch(`http://127.0.0.1:8000/${endpoint}/?question=${encodedQuestion}&models=${selectedModels.join(',')}&is_advanced=${isAdvanced}&use_rag=${useRAG}`, { method: 'GET' })
+    fetch(`https://fingptbackend-ejcrcydrg8hjb7ea.eastus2-01.azurewebsites.net/${endpoint}/?question=${encodedQuestion}&models=${selectedModels.join(',')}&is_advanced=${isAdvanced}&use_rag=${useRAG}`, { method: 'GET' })
         .then(response => response.json())
         .then(data => {
             const endTime = performance.now();
@@ -98,11 +73,11 @@ function handleChatResponse(question, isAdvanced = false) {
             if (mainResponse.startsWith("The following file(s) are missing")) {
                 mainLoadingElement.innerText = `FinGPT #1: Error - ${mainResponse}`;
             } else {
-                mainLoadingElement.innerText = `FinGPT #1: ${mainResponse}`;
+                mainLoadingElement.innerText = `FinGPT #2: ${mainResponse}`;
             }
 
             if (additionalResponse.startsWith("The following file(s) are missing")) {
-                additionalLoadingElement.innerText = `FinGPT #2: Error - ${additionalResponse}`;
+                additionalLoadingElement.innerText = `FinGPT #1: Error - ${additionalResponse}`;
             } else {
                 additionalLoadingElement.innerText = `FinGPT #2: ${additionalResponse}`;
             }
@@ -117,51 +92,6 @@ function handleChatResponse(question, isAdvanced = false) {
             additionalLoadingElement.innerText = `FinGPT #2: Failed to load response.`;
         });
 }
-
-
-
-
-
-
-
-// additional popup for the second model
-// function createAdditionalPopup(modelName) {
-//     const additionalPopup = document.createElement('div');
-//     additionalPopup.id = "additionalPopup";
-//     additionalPopup.classList.add('additional-popup');  // Use a different class for styling
-//
-//     const header = document.createElement('div');
-//     header.id = "header";
-//     header.className = "draggable";
-//
-//     const title = document.createElement('span');
-//     title.innerText = `${modelName} Response`;
-//
-//     header.appendChild(title);
-//     additionalPopup.appendChild(header);
-//
-//     const content = document.createElement('div');
-//     content.id = "content";
-//
-//     // const introText = document.createElement('p');
-//     // introText.innerText = "Response from " + modelName;
-//     // content.appendChild(introText);
-//
-//     const responseContainer = document.createElement('div');
-//     responseContainer.id = "respons";
-//     responseContainer.innerText = `${modelName}: Loading...`;
-//
-//     content.appendChild(responseContainer);
-//     additionalPopup.appendChild(content);
-//
-//     document.body.appendChild(additionalPopup);
-//
-//     const mainPopup = document.getElementById('draggableElement');
-//     const rect = mainPopup.getBoundingClientRect();
-//     additionalPopup.style.position = "absolute";
-//     additionalPopup.style.top = `${rect.top}px`;
-//     additionalPopup.style.left = `${rect.right + 20}px`;
-// }
 
 // Ask button click
 function get_chat_response() {
@@ -180,15 +110,52 @@ let searchQuery = '';
 
 // Advanced Ask button click
 function get_adv_chat_response() {
-    const question = document.getElementById('textbox').value;
+    const question = document.getElementById('textbox').value.trim();
 
-    if (question) {
+    if (question === '') {
+        alert("Please enter a message.");
+        return;
+    }
+
+    if (isImageMode) {
+        // Image Processing Mode
+        // Send a request to process the image with the text prompt
+        fetch('https://fingptbackend-ejcrcydrg8hjb7ea.eastus2-01.azurewebsites.net/process_image/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 'text_prompt': question })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    handleImageResponse(question, data.description);
+                } else {
+                    alert('Failed to process image.');
+                }
+            })
+            .catch(error => {
+                console.error('Error processing image:', error);
+            });
+    } else {
+        // Text Processing Mode
         handleChatResponse(question, true);
         logQuestion(question, 'Advanced Ask');
-        document.getElementById('textbox').value = '';
-    } else {
-        alert("Please enter a question.");
     }
+
+    document.getElementById('textbox').value = '';
+}
+
+// Function to handle image response
+function handleImageResponse(question, description) {
+    const responseContainer = document.getElementById('respons');
+    appendChatElement(responseContainer, 'your_question', question);
+
+    const responseDiv = document.createElement('div');
+    responseDiv.className = 'agent_response';
+    responseDiv.innerText = description;
+    responseContainer.appendChild(responseDiv);
+
+    responseContainer.scrollTop = responseContainer.scrollHeight;
 }
 
 function clear() {
@@ -199,7 +166,7 @@ function clear() {
     if (sourceurls) {
         sourceurls.innerHTML = "";
     }
-    fetch(`http://127.0.0.1:8000/clear_messages/`, { method: "POST" })
+    fetch(`https://fingptbackend-ejcrcydrg8hjb7ea.eastus2-01.azurewebsites.net/clear_messages/`, { method: "POST" })
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -224,7 +191,7 @@ function get_sources(search_query) {
     loadingSpinner.style.display = 'block'; // Show the spinner
     source_urls.style.display = 'none'; // Hide the source list initially
 
-    fetch(`http://127.0.0.1:8000/get_source_urls/?query=${String(search_query)}`, { method: "GET" })
+    fetch(`https://fingptbackend-ejcrcydrg8hjb7ea.eastus2-01.azurewebsites.net/get_source_urls/?query=${String(search_query)}`, { method: "GET" })
         .then(response => response.json())
         .then(data => {
             console.log(data["resp"]);
@@ -254,11 +221,11 @@ function get_sources(search_query) {
         });
 }
 
-// log question
+// Function to log question
 function logQuestion(question, button) {
     const currentUrl = window.location.href;
 
-    fetch(`http://127.0.0.1:8000/log_question/?question=${encodeURIComponent(question)}&button=${encodeURIComponent(button)}&current_url=${encodeURIComponent(currentUrl)}`,
+    fetch(`https://fingptbackend-ejcrcydrg8hjb7ea.eastus2-01.azurewebsites.net/log_question/?question=${encodeURIComponent(question)}&button=${encodeURIComponent(button)}&current_url=${encodeURIComponent(currentUrl)}`,
         { method: "GET" })
         .then(response => response.json())
         .then(data => {
@@ -270,13 +237,6 @@ function logQuestion(question, button) {
             console.error('Error logging question:', error);
         });
 }
-
-
-
-
-
-
-
 
 // Main popup
 const popup = document.createElement('div');
@@ -320,8 +280,10 @@ minimizeIcon.onclick = function() {
 const closeIcon = document.createElement('span');
 closeIcon.innerText = "❌";
 closeIcon.className = "icon";
-closeIcon.onclick = function() { popup.style.display = 'none';
-                                additionalPopup.style.display = 'none';};
+closeIcon.onclick = function() {
+    popup.style.display = 'none';
+    additionalPopup.style.display = 'none';
+};
 
 iconContainer.appendChild(settingsIcon);
 iconContainer.appendChild(minimizeIcon);
@@ -351,15 +313,58 @@ const responseContainer = document.createElement('div');
 responseContainer.id = "respons";
 content.appendChild(responseContainer);
 
+// Input container
 const inputContainer = document.createElement('div');
 inputContainer.id = "inputContainer";
 
+// Create mode buttons
+const modeButtonsContainer = document.createElement('div');
+modeButtonsContainer.id = 'modeButtonsContainer';
+
+const textModeButton = document.createElement('button');
+textModeButton.id = 'textModeButton';
+textModeButton.innerText = 'Text Mode';
+textModeButton.classList.add('mode-button', 'active-mode');
+
+const imageModeButton = document.createElement('button');
+imageModeButton.id = 'imageModeButton';
+imageModeButton.innerText = 'Image Mode';
+imageModeButton.classList.add('mode-button');
+
+modeButtonsContainer.appendChild(textModeButton);
+modeButtonsContainer.appendChild(imageModeButton);
+
+inputContainer.appendChild(modeButtonsContainer);
+
+// Textbox
 const textbox = document.createElement("input");
 textbox.type = "text";
 textbox.id = "textbox";
 textbox.placeholder = "Type your question here...";
 
 inputContainer.appendChild(textbox);
+
+// Bind Enter key to get_chat_response()
+textbox.addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+        get_chat_response();
+    }
+});
+
+// Initialize isImageMode
+let isImageMode = false;
+
+textModeButton.addEventListener('click', function() {
+    isImageMode = false;
+    textModeButton.classList.add('active-mode');
+    imageModeButton.classList.remove('active-mode');
+});
+
+imageModeButton.addEventListener('click', function() {
+    isImageMode = true;
+    imageModeButton.classList.add('active-mode');
+    textModeButton.classList.remove('active-mode');
+});
 
 const buttonContainer = document.createElement('div');
 buttonContainer.id = "buttonContainer";
@@ -400,7 +405,6 @@ popup.appendChild(buttonRow);
 popup.appendChild(inputContainer);
 popup.appendChild(buttonContainer);
 
-
 // Additional popup
 const additionalPopup = document.createElement('div');
 additionalPopup.id = "additionalPopup";
@@ -424,13 +428,6 @@ additionalResponseContainer.id = "respons";
 additionalContent.appendChild(additionalResponseContainer);
 
 additionalPopup.appendChild(additionalContent);
-document.body.appendChild(additionalPopup);
-
-// Position the additional popup next to the main popup
-const rect = popup.getBoundingClientRect();
-additionalPopup.style.position = "absolute";
-additionalPopup.style.top = `${rect.top}px`;
-additionalPopup.style.left = `${rect.right + 20}px`;
 
 // Settings Window
 const settings_window = document.createElement('div');
@@ -467,7 +464,7 @@ const modelSelectionContent = document.createElement('div');
 modelSelectionContent.id = "model_selection_content";
 modelSelectionContent.style.display = "none";
 
-// handle model selection
+// Handle model selection
 function handleModelSelection(modelItem, modelName) {
     if (selectedModels.includes(modelName)) {
         // Deselect
@@ -491,7 +488,7 @@ availableModels.forEach(model => {
     modelItem.className = 'model-selection-item';
     modelItem.innerText = model;
 
-    // default selected models
+    // Default selected models
     if (selectedModels.includes(model)) {
         modelItem.classList.add('selected-model');
     }
@@ -541,7 +538,7 @@ addLinkButton.onclick = function() {
     const newLink = prompt("Enter a new preferred URL:");
     if (newLink) {
         // Send the new link to the backend
-        fetch('http://127.0.0.1:8000/api/add_preferred_url/', {
+        fetch('https://fingptbackend-ejcrcydrg8hjb7ea.eastus2-01.azurewebsites.net/api/add_preferred_url/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -565,7 +562,7 @@ addLinkButton.onclick = function() {
 
 // Load existing preferred links when the settings window is opened
 function loadPreferredLinks() {
-    fetch('http://127.0.0.1:8000/api/get_preferred_urls/')
+    fetch('https://fingptbackend-ejcrcydrg8hjb7ea.eastus2-01.azurewebsites.net/api/get_preferred_urls/')
         .then(response => response.json())
         .then(data => {
             preferredLinksContent.innerHTML = ''; // Clear existing content
@@ -600,7 +597,6 @@ preferredLinksContainer.appendChild(preferredLinksContent);
 settings_window.appendChild(preferredLinksContainer);
 settings_window.appendChild(ragLabel);
 
-
 document.body.appendChild(settings_window);
 
 // Toggle Preferred Links Section
@@ -627,7 +623,6 @@ settingsIcon.onclick = function() {
     }
 };
 
-
 // Close settings popup when clicks outside
 document.addEventListener('click', function(event) {
     const settingsWindow = document.getElementById('settings_window');
@@ -635,7 +630,6 @@ document.addEventListener('click', function(event) {
         settingsWindow.style.display = 'none';
     }
 });
-
 
 // Sources Window
 const sources_window = document.createElement('div');
@@ -660,7 +654,7 @@ sourcesHeader.appendChild(sourcesCloseIcon);
 const loadingSpinner = document.createElement('div');
 loadingSpinner.id = "loading_spinner";
 loadingSpinner.className = "spinner";
-loadingSpinner.style.display = 'none'; // hide loading initially
+loadingSpinner.style.display = 'none'; // Hide loading initially
 
 const source_urls = document.createElement('ul');
 source_urls.id = "source_urls";
@@ -673,6 +667,31 @@ sources_window.appendChild(source_urls);
 document.body.appendChild(sources_window);
 document.body.appendChild(popup);
 document.body.appendChild(additionalPopup);
+
+// Set initial positions for the main popup
+popup.style.position = "absolute";
+popup.style.top = "10%";
+popup.style.left = "10%";
+popup.style.width = '450px';
+popup.style.height = '650px';
+
+// Set initial styles for the additional popup
+additionalPopup.style.position = "absolute";
+additionalPopup.style.width = '450px';
+additionalPopup.style.height = '650px';
+
+// Position the additional popup next to the main popup
+function positionAdditionalPopup() {
+    const rect = popup.getBoundingClientRect();
+    additionalPopup.style.top = `${rect.top}px`;
+    additionalPopup.style.left = `${rect.right + 20}px`;
+}
+
+// Call the function initially
+positionAdditionalPopup();
+
+// Reposition popups on window resize
+window.addEventListener('resize', positionAdditionalPopup);
 
 let offsetX, offsetY, startX, startY, startWidth, startHeight;
 let sourceWindowOffsetX = 10;
@@ -716,17 +735,13 @@ function makeDraggableAndResizable(element) {
         element.style.left = `${newX}px`;
         element.style.top = `${newY}px`;
 
-        // move sources window with main popup
+        // Move sources window with main popup
         const sourcesWindow = document.getElementById('sources_window');
         sourcesWindow.style.left = `${newX + element.offsetWidth + sourceWindowOffsetX}px`;
         sourcesWindow.style.top = `${newY}px`;
 
-        // move additional popup with main popup
-        const additionalPopup = document.getElementById('additionalPopup');
-        if (additionalPopup) {
-            additionalPopup.style.left = `${newX + element.offsetWidth + 20}px`;
-            additionalPopup.style.top = `${newY}px`;
-        }
+        // Move additional popup with main popup
+        positionAdditionalPopup();
     }
 
     function resizeElement(e) {
@@ -740,15 +755,12 @@ function makeDraggableAndResizable(element) {
             element.style.height = `${newHeight}px`;
         }
 
-        // move sources window with main popup
+        // Move sources window with main popup
         const sourcesWindow = document.getElementById('sources_window');
         sourcesWindow.style.left = `${element.offsetLeft + element.offsetWidth + sourceWindowOffsetX}px`;
 
-        // move additional popup with main popup
-        const additionalPopup = document.getElementById('additionalPopup');
-        if (additionalPopup) {
-            additionalPopup.style.left = `${element.offsetLeft + element.offsetWidth + 20}px`;
-        }
+        // Move additional popup with main popup
+        positionAdditionalPopup();
     }
 
     function closeDragOrResizeElement() {
