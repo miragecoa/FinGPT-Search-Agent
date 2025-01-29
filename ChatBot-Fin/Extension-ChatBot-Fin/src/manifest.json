@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "FinGPT",
-  "version": "2.0.0",
-  "description": "A demo to initialize the extension for FinGPT. We will use this to test the extension and see if it works. We will be adding more features as we go.",
+  "version": "3.0.1",
+  "description": "A demo to initialize the extension for FinGPT. This is the locally deployed, dual model display version.",
   "icons": {
     "16": "assets/16x16_icon.png",
     "32": "assets/32x32_icon.png"
