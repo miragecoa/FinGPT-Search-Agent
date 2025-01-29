@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 import os
-import re
+# import re
 import pickle
 import numpy as np
 import faiss
