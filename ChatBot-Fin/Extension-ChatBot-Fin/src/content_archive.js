@@ -9,11 +9,11 @@ const encodedContent = encodeURIComponent(textContent);
 // Available models
 const availableModels = ["o1-preview", "gpt-4o"];
 
-// Initialize model selection
-let selectedModels = ['o1-preview', 'gpt-4o'];
+// Initialize a single selected model
+let selectedModel = "o1-preview";
 
-function getSelectedModels() {
-    return selectedModels;
+function getSelectedModel() {
+    return selectedModel;
 }
 
 // Fetch the text content
@@ -40,56 +40,57 @@ function appendChatElement(parent, className, text) {
     return element;
 }
 
-// Function to handle chat responses
+// Function to handle chat responses (single model)
 function handleChatResponse(question, isAdvanced = false) {
     const startTime = performance.now();
     const responseContainer = document.getElementById('respons');
-    const additionalResponseContainer = document.getElementById('additionalPopup').querySelector('#respons');
 
+    // Show the user's question
     appendChatElement(responseContainer, 'your_question', question);
-    appendChatElement(additionalResponseContainer, 'your_question', question);
 
-    const mainLoadingElement = appendChatElement(responseContainer, 'agent_response', `FinGPT #1: Loading...`);
-    const additionalLoadingElement = appendChatElement(additionalResponseContainer, 'agent_response', `FinGPT #2: Loading...`);
+    // Placeholder "Loading..." text
+    const loadingElement = appendChatElement(
+        responseContainer,
+        'agent_response',
+        `FinGPT: Loading...`
+    );
 
+    // Encode question and decide endpoint
     const encodedQuestion = encodeURIComponent(question);
-
     const endpoint = isAdvanced ? 'get_adv_response' : 'get_chat_response';
 
     // Read the RAG checkbox state
     const useRAG = document.getElementById('ragSwitch').checked;
 
-    fetch(`http://127.0.0.1:8000/${endpoint}/?question=${encodedQuestion}&models=${selectedModels.join(',')}&is_advanced=${isAdvanced}&use_rag=${useRAG}`, { method: 'GET' })
+    fetch(
+        `http://127.0.0.1:8000/${endpoint}/?question=${encodedQuestion}&models=${selectedModel}&is_advanced=${isAdvanced}&use_rag=${useRAG}`,
+        { method: 'GET' }
+    )
         .then(response => response.json())
         .then(data => {
             const endTime = performance.now();
             const responseTime = endTime - startTime;
             console.log(`Time taken for response: ${responseTime} ms`);
 
-            // Check for error messages
-            const mainResponse = data.resp[selectedModels[0]];
-            const additionalResponse = data.resp[selectedModels[1]];
+            // Get the response for the selected model
+            const modelResponse = data.resp[selectedModel];
 
-            if (mainResponse.startsWith("The following file(s) are missing")) {
-                mainLoadingElement.innerText = `FinGPT #1: Error - ${mainResponse}`;
+            if (!modelResponse) {
+                // Safeguard in case backend does not return something
+                loadingElement.innerText = `FinGPT: (No response from server)`;
+            } else if (modelResponse.startsWith("The following file(s) are missing")) {
+                loadingElement.innerText = `FinGPT: Error - ${modelResponse}`;
             } else {
-                mainLoadingElement.innerText = `FinGPT #2: ${mainResponse}`;
+                loadingElement.innerText = `FinGPT: ${modelResponse}`;
             }
 
-            if (additionalResponse.startsWith("The following file(s) are missing")) {
-                additionalLoadingElement.innerText = `FinGPT #1: Error - ${additionalResponse}`;
-            } else {
-                additionalLoadingElement.innerText = `FinGPT #2: ${additionalResponse}`;
-            }
-
+            // Clear the user textbox
             document.getElementById('textbox').value = '';
             responseContainer.scrollTop = responseContainer.scrollHeight;
         })
         .catch(error => {
             console.error('There was a problem with your fetch operation:', error);
-
-            mainLoadingElement.innerText = `FinGPT #1: Failed to load response.`;
-            additionalLoadingElement.innerText = `FinGPT #2: Failed to load response.`;
+            loadingElement.innerText = `FinGPT: Failed to load response.`;
         });
 }
 
@@ -119,7 +120,6 @@ function get_adv_chat_response() {
 
     if (isImageMode) {
         // Image Processing Mode
-        // Send a request to process the image with the text prompt
         fetch('http://127.0.0.1:8000/process_image/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -225,8 +225,10 @@ function get_sources(search_query) {
 function logQuestion(question, button) {
     const currentUrl = window.location.href;
 
-    fetch(`http://127.0.0.1:8000/log_question/?question=${encodeURIComponent(question)}&button=${encodeURIComponent(button)}&current_url=${encodeURIComponent(currentUrl)}`,
-        { method: "GET" })
+    fetch(
+        `http://127.0.0.1:8000/log_question/?question=${encodeURIComponent(question)}&button=${encodeURIComponent(button)}&current_url=${encodeURIComponent(currentUrl)}`,
+        { method: "GET" }
+    )
         .then(response => response.json())
         .then(data => {
             if (data.status !== 'success') {
@@ -276,7 +278,6 @@ closeIcon.innerText = "❌";
 closeIcon.className = "icon";
 closeIcon.onclick = function() {
     popup.style.display = 'none';
-    additionalPopup.style.display = 'none';
 };
 
 iconContainer.appendChild(settingsIcon);
@@ -399,30 +400,6 @@ popup.appendChild(buttonRow);
 popup.appendChild(inputContainer);
 popup.appendChild(buttonContainer);
 
-// Additional popup
-const additionalPopup = document.createElement('div');
-additionalPopup.id = "additionalPopup";
-additionalPopup.classList.add('additional-popup'); // Use a different class for styling
-
-const additionalHeader = document.createElement('div');
-additionalHeader.id = "additionalHeader";
-additionalHeader.className = "draggable";
-
-const additionalTitle = document.createElement('span');
-additionalTitle.innerText = "FinGPT Model #2";
-
-additionalHeader.appendChild(additionalTitle);
-additionalPopup.appendChild(additionalHeader);
-
-const additionalContent = document.createElement('div');
-additionalContent.id = "additionalContent";
-
-const additionalResponseContainer = document.createElement('div');
-additionalResponseContainer.id = "respons";
-additionalContent.appendChild(additionalResponseContainer);
-
-additionalPopup.appendChild(additionalContent);
-
 // Settings Window
 const settings_window = document.createElement('div');
 settings_window.id = "settings_window";
@@ -446,7 +423,7 @@ modelSelectionContainer.id = "model_selection_container";
 
 const modelSelectionHeader = document.createElement('div');
 modelSelectionHeader.id = "model_selection_header";
-modelSelectionHeader.innerText = `Model: ${selectedModels.join(' & ')}`;  // show default
+modelSelectionHeader.innerText = `Model: ${selectedModel}`;
 
 const modelToggleIcon = document.createElement('span');
 modelToggleIcon.innerText = "⯆";
@@ -458,21 +435,17 @@ const modelSelectionContent = document.createElement('div');
 modelSelectionContent.id = "model_selection_content";
 modelSelectionContent.style.display = "none";
 
-// Handle model selection
+// Handle model selection (only one at a time)
 function handleModelSelection(modelItem, modelName) {
-    if (selectedModels.includes(modelName)) {
-        // Deselect
-        selectedModels = selectedModels.filter(model => model !== modelName);
-        modelItem.classList.remove('selected-model');
-    } else if (selectedModels.length < 2) {
-        // Select
-        selectedModels.push(modelName);
-        modelItem.classList.add('selected-model');
-    } else {
-        alert("You can only select up to 2 models.");
-    }
+    // Deselect all items
+    const allItems = document.querySelectorAll('.model-selection-item');
+    allItems.forEach(item => item.classList.remove('selected-model'));
 
-    modelSelectionHeader.innerText = `Model: ${selectedModels.join(' & ') || "Select up to 2"}`;
+    // Set selectedModel and mark the clicked item
+    selectedModel = modelName;
+    modelItem.classList.add('selected-model');
+
+    modelSelectionHeader.innerText = `Model: ${selectedModel}`;
     modelSelectionHeader.appendChild(modelToggleIcon);
 }
 
@@ -482,8 +455,8 @@ availableModels.forEach(model => {
     modelItem.className = 'model-selection-item';
     modelItem.innerText = model;
 
-    // Default selected models
-    if (selectedModels.includes(model)) {
+    // Default selected model
+    if (model === selectedModel) {
         modelItem.classList.add('selected-model');
     }
 
@@ -579,9 +552,9 @@ ragLabel.innerText = "Local RAG";
 
 const ragSwitch = document.createElement('input');
 ragSwitch.type = "checkbox";
-ragSwitch.id = "ragSwitch";  // Assign an ID to access later
+ragSwitch.id = "ragSwitch";
 ragSwitch.onchange = function() {
-    // Handle any immediate actions if needed when the checkbox state changes
+    // Any immediate actions when the checkbox changes can be handled here
 };
 
 ragLabel.appendChild(ragSwitch);
@@ -619,7 +592,6 @@ settingsIcon.onclick = function(event) {
         loadPreferredLinks();
     }
 };
-
 
 // Close settings popup when clicks outside
 document.addEventListener('click', function(event) {
@@ -668,7 +640,6 @@ sources_window.appendChild(source_urls);
 // Append windows to the body
 document.body.appendChild(sources_window);
 document.body.appendChild(popup);
-document.body.appendChild(additionalPopup);
 
 // Set initial positions for the main popup
 popup.style.position = "absolute";
@@ -677,24 +648,7 @@ popup.style.left = "10%";
 popup.style.width = '450px';
 popup.style.height = '650px';
 
-// Set initial styles for the additional popup
-additionalPopup.style.position = "absolute";
-additionalPopup.style.width = '450px';
-additionalPopup.style.height = '650px';
-
-// Position the additional popup next to the main popup
-function positionAdditionalPopup() {
-    const rect = popup.getBoundingClientRect();
-    additionalPopup.style.top = `${rect.top}px`;
-    additionalPopup.style.left = `${rect.right + 20}px`;
-}
-
-// Call the function initially
-positionAdditionalPopup();
-
-// Reposition popups on window resize
-window.addEventListener('resize', positionAdditionalPopup);
-
+// Make popup draggable and resizable
 let offsetX, offsetY, startX, startY, startWidth, startHeight;
 let sourceWindowOffsetX = 10;
 
@@ -741,9 +695,6 @@ function makeDraggableAndResizable(element) {
         const sourcesWindow = document.getElementById('sources_window');
         sourcesWindow.style.left = `${newX + element.offsetWidth + sourceWindowOffsetX}px`;
         sourcesWindow.style.top = `${newY}px`;
-
-        // Move additional popup with main popup
-        positionAdditionalPopup();
     }
 
     function resizeElement(e) {
@@ -760,9 +711,6 @@ function makeDraggableAndResizable(element) {
         // Move sources window with main popup
         const sourcesWindow = document.getElementById('sources_window');
         sourcesWindow.style.left = `${element.offsetLeft + element.offsetWidth + sourceWindowOffsetX}px`;
-
-        // Move additional popup with main popup
-        positionAdditionalPopup();
     }
 
     function closeDragOrResizeElement() {
@@ -774,9 +722,9 @@ function makeDraggableAndResizable(element) {
     }
 }
 
+// Initialize
 makeDraggableAndResizable(popup);
 
-const sourcesWindow = document.getElementById('sources_window');
 const popupRect = popup.getBoundingClientRect();
-sourcesWindow.style.left = `${popupRect.right + sourceWindowOffsetX}px`;
-sourcesWindow.style.top = `${popupRect.top}px`;
+sources_window.style.left = `${popupRect.right + sourceWindowOffsetX}px`;
+sources_window.style.top = `${popupRect.top}px`;
