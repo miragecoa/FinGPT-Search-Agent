@@ -7,7 +7,7 @@ const textContent = document.body.innerText;
 const encodedContent = encodeURIComponent(textContent);
 
 // Available models
-const availableModels = ["o1-preview", "gpt-4o"];
+const availableModels = ["o1-preview", "gpt-4o", "deepseek-reasoner"];
 
 // Initialize a single selected model
 let selectedModel = "o1-preview";
