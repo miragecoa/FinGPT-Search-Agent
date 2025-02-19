@@ -233,28 +233,52 @@ def create_response(user_input, message_list, model="o1-preview"):
     """
     Creates a response using OpenAI's API and a specified model.
     """
-    print(message_list)
-    openai.api_key = api_key
-    print("starting creation")
+    def create_response(user_input, message_list, model="o1-preview"):
+        """
+        Creates a response using either OpenAI's ChatCompletion or the Deepseek
+        API, depending on the 'model' argument.
+        """
 
-    # Update message_list for unsupported system role
-    # Filter out 'system' role messages if the model does not support them
-    filtered_message_list = [msg for msg in message_list if msg["role"] != "system"]
+    # If the user selected "o1-preview" or "gpt-4o", we stick with standard openai
+    # If "deepseek-R1" is chosen, we call the Deepseek client
+    if model == "deepseek-reasoner":
+        # Deepseek logic
+        from openai import OpenAI
+        deepseek_api_key = os.getenv("DEEPSEEK_API_KEY", "")
 
-    # Append user input
-    filtered_message_list.append({"role": "user", "content": user_input})
+        client = OpenAI(
+            api_key=deepseek_api_key,
+            base_url="https://api.deepseek.com"  # can use https://api.deepseek.com/v1
+        )
 
-    # Make the API call
-    completion = openai.ChatCompletion.create(
-        model=model,
-        messages=filtered_message_list,
-    )
+        # The "system" prompt in Deepseek is optional, but we can keep it for consistency
+        # Filter out 'system' role if needed, or adapt them. For now, we assume it is fine:
+        filtered_message_list = [msg for msg in message_list if msg["role"] != "system"]
+        filtered_message_list.append({"role": "user", "content": user_input})
 
-    print(completion.choices[0].message.content)
+        # Convert message_list to the shape Deepseek needs
+        # Usually: messages=[{"role": "system", "content": ...}, {"role": "user", "content": ...}]
+        # We'll just assume it’s the same shape as OpenAI
+        response = client.chat.completions.create(
+            model="deepseek-reasoner",  # This is the actual model name on their side
+            messages=filtered_message_list
+        )
+        return response.choices[0].message.content
 
-    filtered_message_list.append({"role": "assistant", "content": completion.choices[0].message.content})
+    else:
+        # For o1-preview or gpt-4o, do the usual OpenAI call
+        openai.api_key = api_key
 
-    return completion.choices[0].message.content
+        # Filter out 'system' role messages if the model does not support them
+        filtered_message_list = [msg for msg in message_list if msg["role"] != "system"]
+        filtered_message_list.append({"role": "user", "content": user_input})
+
+        completion = openai.ChatCompletion.create(
+            model=model,
+            messages=filtered_message_list,
+        )
+        return completion.choices[0].message.content
+
 
 
 
