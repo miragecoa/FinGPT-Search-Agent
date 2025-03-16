@@ -118,29 +118,29 @@ function get_adv_chat_response() {
         return;
     }
 
-    if (isImageMode) {
+    // if (isImageMode) {
         // Image Processing Mode
-        fetch('http://127.0.0.1:8000/process_image/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 'text_prompt': question })
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    handleImageResponse(question, data.description);
-                } else {
-                    alert('Failed to process image.');
-                }
-            })
-            .catch(error => {
-                console.error('Error processing image:', error);
-            });
-    } else {
+    //     fetch('http://127.0.0.1:8000/process_image/', {
+    //         method: 'POST',
+    //         headers: { 'Content-Type': 'application/json' },
+    //         body: JSON.stringify({ 'text_prompt': question })
+    //     })
+    //         .then(response => response.json())
+    //         .then(data => {
+    //             if (data.status === 'success') {
+    //                 handleImageResponse(question, data.description);
+    //             } else {
+    //                 alert('Failed to process image.');
+    //             }
+    //         })
+    //         .catch(error => {
+    //             console.error('Error processing image:', error);
+    //         });
+    // } else {
         // Text Processing Mode
         handleChatResponse(question, true);
         logQuestion(question, 'Advanced Ask');
-    }
+    // }
 
     document.getElementById('textbox').value = '';
 }
@@ -321,13 +321,13 @@ textModeButton.id = 'textModeButton';
 textModeButton.innerText = 'Text Mode';
 textModeButton.classList.add('mode-button', 'active-mode');
 
-const imageModeButton = document.createElement('button');
-imageModeButton.id = 'imageModeButton';
-imageModeButton.innerText = 'Image Mode';
-imageModeButton.classList.add('mode-button');
+// const imageModeButton = document.createElement('button');
+// imageModeButton.id = 'imageModeButton';
+// imageModeButton.innerText = 'Image Mode';
+// imageModeButton.classList.add('mode-button');
 
 modeButtonsContainer.appendChild(textModeButton);
-modeButtonsContainer.appendChild(imageModeButton);
+// modeButtonsContainer.appendChild(imageModeButton);
 
 inputContainer.appendChild(modeButtonsContainer);
 
@@ -347,19 +347,19 @@ textbox.addEventListener("keydown", function(event) {
 });
 
 // Initialize isImageMode
-let isImageMode = false;
+// let isImageMode = false;
 
 textModeButton.addEventListener('click', function() {
-    isImageMode = false;
+    // isImageMode = false;
     textModeButton.classList.add('active-mode');
-    imageModeButton.classList.remove('active-mode');
+    // imageModeButton.classList.remove('active-mode');
 });
 
-imageModeButton.addEventListener('click', function() {
-    isImageMode = true;
-    imageModeButton.classList.add('active-mode');
-    textModeButton.classList.remove('active-mode');
-});
+// imageModeButton.addEventListener('click', function() {
+//     isImageMode = true;
+//     imageModeButton.classList.add('active-mode');
+//     textModeButton.classList.remove('active-mode');
+// });
 
 const buttonContainer = document.createElement('div');
 buttonContainer.id = "buttonContainer";
