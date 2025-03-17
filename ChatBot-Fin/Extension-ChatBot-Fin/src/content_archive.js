@@ -260,6 +260,50 @@ const settingsIcon = document.createElement('span');
 settingsIcon.innerText = "⚙️";
 settingsIcon.className = "icon";
 
+const positionModeIcon = document.createElement('span');
+positionModeIcon.innerText = "📌";
+positionModeIcon.id = "position-mode-icon";
+positionModeIcon.className = "icon";
+positionModeIcon.onclick = function () {
+    if (isFixedMode) {
+        // switch to absolute positioning
+        const rect = popup.getBoundingClientRect();
+        console.log(`switching to abs\n current fixed positioning: ${rect.left} , ${rect.top}`)
+        const newX = rect.left + window.scrollX
+        const newY = rect.top + window.scrollY
+        console.log(`new absolute positioning (should be same visible position): ${newX} , ${newY}`)
+        popup.style.position = "absolute";
+        popup.style.top = `${newY}px`;
+        popup.style.left = `${newX}px`;
+        positionModeIcon.innerText = "📌";
+
+        // settings window positioning update
+        if (settings_window.style.display != 'none') {
+            const settingsIconRect = settingsIcon.getBoundingClientRect();
+            settings_window.style.position = "absolute";
+            settings_window.style.top = `${settingsIconRect.bottom}px`;
+            settings_window.style.left = `${settingsIconRect.left}px`;
+        }
+    } else {
+        // switch to fixed positioning
+        const rect = popup.getBoundingClientRect();
+        popup.style.position = "fixed";
+        popup.style.top = `${rect.top}px`;
+        popup.style.left = `${rect.left}px`;
+        positionModeIcon.innerText = "⛓️‍💥";
+
+        // settings window positioning update
+        if (settings_window.style.display != 'none') {
+            const settingsIconRect = settingsIcon.getBoundingClientRect();
+            settings_window.style.position = "fixed";
+            settings_window.style.top = `${settingsIconRect.bottom + window.scrollY}px`;
+            settings_window.style.left = `${settingsIconRect.left + window.scrollX}px`;
+        }
+        
+    }
+    isFixedMode = !isFixedMode; // toggle the mode
+}
+
 const minimizeIcon = document.createElement('span');
 minimizeIcon.innerText = "➖";
 minimizeIcon.className = "icon";
@@ -281,6 +325,7 @@ closeIcon.onclick = function() {
 };
 
 iconContainer.appendChild(settingsIcon);
+iconContainer.appendChild(positionModeIcon);
 iconContainer.appendChild(minimizeIcon);
 iconContainer.appendChild(closeIcon);
 
@@ -582,10 +627,13 @@ settingsIcon.onclick = function(event) {
     event.stopPropagation();
 
     const rect = settingsIcon.getBoundingClientRect();
-    settings_window.style.top = `${rect.bottom}px`;
-    settings_window.style.left = `${rect.left}px`;
+    const settingsWindowY = rect.bottom + (isFixedMode ? window.scrollY : 0)
+    const settingsWindowX = rect.left + (isFixedMode ? window.scrollX : 0)
+    settings_window.style.top = `${rect.bottom + (isFixedMode ? window.scrollY : 0)}px`;
+    settings_window.style.left = `${rect.left + (isFixedMode ? window.scrollX : 0)}px`;
     settings_window.style.display =
         settings_window.style.display === 'none' ? 'block' : 'none';
+    settings_window.style.position = isFixedMode ? 'fixed' : 'absolute';
 
     // Load preferred links
     if (settings_window.style.display === 'block') {
@@ -651,13 +699,14 @@ popup.style.height = '650px';
 // Make popup draggable and resizable
 let offsetX, offsetY, startX, startY, startWidth, startHeight;
 let sourceWindowOffsetX = 10;
+let isFixedMode = false; // fixedMode => stick to viewport (fixed positioning), otherwise stick to document (absolute positioning)
 
 function makeDraggableAndResizable(element) {
     let isDragging = false;
     let isResizing = false;
 
     element.querySelector('.draggable').addEventListener('mousedown', function(e) {
-        if (['INPUT', 'TEXTAREA', 'BUTTON', 'A'].includes(e.target.tagName)) {
+        if (['INPUT', 'TEXTAREA', 'BUTTON', 'A'].includes(e.target.tagName) || 'position-mode-icon' === e.target.id) {
             return;
         }
 
@@ -686,8 +735,8 @@ function makeDraggableAndResizable(element) {
 
     function dragElement(e) {
         e.preventDefault();
-        const newX = e.clientX - offsetX + window.scrollX;
-        const newY = e.clientY - offsetY + window.scrollY;
+        const newX = e.clientX - offsetX + (isFixedMode ? 0 : window.scrollX);
+        const newY = e.clientY - offsetY + (isFixedMode ? 0 : window.scrollY);
         element.style.left = `${newX}px`;
         element.style.top = `${newY}px`;
 
