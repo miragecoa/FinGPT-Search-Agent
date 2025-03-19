@@ -268,22 +268,20 @@ positionModeIcon.onclick = function () {
     if (isFixedMode) {
         // switch to absolute positioning
         const rect = popup.getBoundingClientRect();
-        console.log(`switching to abs\n current fixed positioning: ${rect.left} , ${rect.top}`)
+
         const newX = rect.left + window.scrollX
         const newY = rect.top + window.scrollY
-        console.log(`new absolute positioning (should be same visible position): ${newX} , ${newY}`)
+
         popup.style.position = "absolute";
         popup.style.top = `${newY}px`;
         popup.style.left = `${newX}px`;
         positionModeIcon.innerText = "📌";
 
         // settings window positioning update
-        if (settings_window.style.display != 'none') {
-            const settingsIconRect = settingsIcon.getBoundingClientRect();
-            settings_window.style.position = "absolute";
-            settings_window.style.top = `${settingsIconRect.bottom}px`;
-            settings_window.style.left = `${settingsIconRect.left}px`;
-        }
+        const settingsIconRect = settingsIcon.getBoundingClientRect();
+        settings_window.style.position = "absolute";
+        settings_window.style.top = `${settingsIconRect.bottom + window.scrollY}px`;
+        settings_window.style.left = `${settingsIconRect.left + window.scrollX}px`;
     } else {
         // switch to fixed positioning
         const rect = popup.getBoundingClientRect();
@@ -293,13 +291,10 @@ positionModeIcon.onclick = function () {
         positionModeIcon.innerText = "⛓️‍💥";
 
         // settings window positioning update
-        if (settings_window.style.display != 'none') {
-            const settingsIconRect = settingsIcon.getBoundingClientRect();
-            settings_window.style.position = "fixed";
-            settings_window.style.top = `${settingsIconRect.bottom + window.scrollY}px`;
-            settings_window.style.left = `${settingsIconRect.left + window.scrollX}px`;
-        }
-        
+        const settingsIconRect = settingsIcon.getBoundingClientRect();
+        settings_window.style.position = "fixed";
+        settings_window.style.top = `${settingsIconRect.bottom}px`;
+        settings_window.style.left = `${settingsIconRect.left}px`;
     }
     isFixedMode = !isFixedMode; // toggle the mode
 }
@@ -447,6 +442,7 @@ popup.appendChild(buttonContainer);
 
 // Settings Window
 const settings_window = document.createElement('div');
+settings_window.style.display = "none";
 settings_window.id = "settings_window";
 
 // Light Mode Toggle
@@ -627,10 +623,10 @@ settingsIcon.onclick = function(event) {
     event.stopPropagation();
 
     const rect = settingsIcon.getBoundingClientRect();
-    const settingsWindowY = rect.bottom + (isFixedMode ? window.scrollY : 0)
-    const settingsWindowX = rect.left + (isFixedMode ? window.scrollX : 0)
-    settings_window.style.top = `${rect.bottom + (isFixedMode ? window.scrollY : 0)}px`;
-    settings_window.style.left = `${rect.left + (isFixedMode ? window.scrollX : 0)}px`;
+    const settingsWindowY = rect.bottom + (isFixedMode ? 0 : window.scrollY)
+    const settingsWindowX = rect.left + (isFixedMode ? 0 : window.scrollX)
+    settings_window.style.top = `${settingsWindowY}px`;
+    settings_window.style.left = `${settingsWindowX}px`;
     settings_window.style.display =
         settings_window.style.display === 'none' ? 'block' : 'none';
     settings_window.style.position = isFixedMode ? 'fixed' : 'absolute';
@@ -647,7 +643,8 @@ document.addEventListener('click', function(event) {
     if (
         settingsWindow.style.display === 'block' &&
         !settingsWindow.contains(event.target) &&
-        !settingsIcon.contains(event.target)
+        !settingsIcon.contains(event.target) &&
+        !positionModeIcon.contains(event.target)
     ) {
         settingsWindow.style.display = 'none';
     }
