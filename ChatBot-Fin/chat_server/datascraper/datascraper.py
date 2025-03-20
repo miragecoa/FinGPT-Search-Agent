@@ -13,12 +13,13 @@ from . import cdm_rag
 
 load_dotenv()
 api_key = os.getenv("API_KEY7")
+req_headers = {'User-Agent': 'Mozilla/5.0'}
 
 
 def data_scrape(url, timeout=2):
     try:
         start_time = time.time()
-        response = requests.get(url, timeout=timeout)
+        response = requests.get(url, timeout=timeout, headers=req_headers)
         end_time = time.time()
         elapsed_time = end_time - start_time
 
@@ -32,7 +33,7 @@ def data_scrape(url, timeout=2):
 
             return first_5000_characters
         else:
-            print('Failed to retrieve the page: ', url)
+            print(f'Failed to retrieve the page with status code {response.status_code}: ', url)
             return -1
     except requests.exceptions.Timeout:
         print('Request timed out after', timeout, 'seconds. Skipping: ', url)
@@ -52,7 +53,7 @@ def get_preferred_urls():
     if os.path.exists(file_path):
         with open(file_path, 'r') as file:
             preferred_urls = [line.strip() for line in file.readlines()]
-
+    print(f"preferred URLs: {preferred_urls}")
     return preferred_urls
 
 
@@ -65,7 +66,7 @@ def search_preferred_urls(keyword):
 
     for url in preferred_urls:
         info = data_scrape(url)
-        print(f"Found in preferred URL: {url}")
+        print(f"Found in preferred URL ({url}): {info}")
         message_list.append({"role": "system", "content": info})
         # if info != -1 and keyword.lower() in info.lower():
         #     print(f"Found in preferred URL: {url}")
@@ -287,7 +288,7 @@ def create_advanced_response(user_input, message_list, model="o1-preview"):
     Creates an advanced response by searching through user-preferred URLs first,
     and then falling back to a general web search using the specified model.
     """
-    print(message_list)
+    print(f"msg list: {message_list}")
     openai.api_key = api_key
     print("starting creation")
 
@@ -344,7 +345,7 @@ def get_website_icon(url):
     """
     Retrieves the website icon (favicon) for a given URL.
     """
-    response = requests.get(url)
+    response = requests.get(url, headers=req_headers)
     soup = BeautifulSoup(response.text, 'html.parser')
     favicon_tag = soup.find('link', rel='icon') or soup.find('link', rel='shortcut icon')
     if favicon_tag:
