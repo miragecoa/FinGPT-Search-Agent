@@ -115,15 +115,16 @@
     padding: 5px 10px; /* Reduced padding */
     font-size: 0.9em;  /* Reduced font size */
     color: white;
-    cursor: pointer;
+    /* cursor: pointer; */
+    cursor: default; /* while image button is disabled */
     margin: 0 5px;
     transition: background-color 0.3s ease;
     white-space: nowrap; /* Prevent text wrapping */
 }
 
-.mode-button:hover {
+/* .mode-button:hover {
     background-color: #555;
-}
+} */
 
 .active-mode {
     background-color: #1abc9c;
@@ -460,9 +461,9 @@
     color: black;
 }
 
-.light-mode .mode-button:hover {
+/* .light-mode .mode-button:hover {
     background-color: #ddd;
-}
+} */
 
 .light-mode .active-mode {
     background-color: #1abc9c;
