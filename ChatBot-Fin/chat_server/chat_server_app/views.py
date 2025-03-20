@@ -1,13 +1,13 @@
-from django.shortcuts import render
-from django.http import JsonResponse
 import json
-import random  # Import 'random' for 'randint'
-from datascraper import datascraper as ds
-from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse
 import os
 import csv
 import request
+import random  # Import 'random' for 'randint'
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.http import HttpResponse
+
 # from transformers import AutoTokenizer, AutoModelForCausalLM
 
 message_list = [
