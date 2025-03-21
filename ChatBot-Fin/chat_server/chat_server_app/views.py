@@ -5,6 +5,7 @@ import request
 import random  # Import 'random' for 'randint'
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
+from datascraper import datascraper as ds
 from django.shortcuts import render
 from django.http import HttpResponse
 
