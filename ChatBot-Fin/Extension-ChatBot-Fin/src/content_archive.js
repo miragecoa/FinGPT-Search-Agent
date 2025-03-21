@@ -1,9 +1,9 @@
 // content_archive.js
 
 const currentUrl = window.location.href.toString();
-console.log(currentUrl);
+console.log("Current page: ", currentUrl);
 
-const textContent = document.body.innerText;
+const textContent = document.body.innerText || "";
 const encodedContent = encodeURIComponent(textContent);
 
 // Available models
@@ -17,18 +17,15 @@ function getSelectedModel() {
 }
 
 // Fetch the text content
-fetch(`http://127.0.0.1:8000/input_webtext/?textContent=${encodedContent}`, { method: "POST" })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
+fetch(`http://127.0.0.1:8000/input_webtext/?textContent=${encodedContent}`, {
+    method: "POST",
+})
+    .then(response => response.json())
     .then(data => {
-        console.log(data);
+        console.log("Received back-end response:", data);
     })
     .catch(error => {
-        console.error('There was a problem with your fetch operation:', error);
+        console.error("Error sending page text to back-end:", error);
     });
 
 // Function to create and append chat elements
