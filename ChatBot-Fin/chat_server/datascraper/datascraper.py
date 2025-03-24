@@ -234,11 +234,6 @@ def create_response(user_input, message_list, model="o1-preview"):
     """
     Creates a response using OpenAI's API and a specified model.
     """
-    def create_response(user_input, message_list, model="o1-preview"):
-        """
-        Creates a response using either OpenAI's ChatCompletion or the Deepseek
-        API, depending on the 'model' argument.
-        """
 
     # If the user selected "o1-preview" or "gpt-4o", we stick with standard openai
     # If "deepseek-R1" is chosen, we call the Deepseek client
@@ -267,10 +262,10 @@ def create_response(user_input, message_list, model="o1-preview"):
         return response.choices[0].message.content
 
     else:
-        # For o1-preview or gpt-4o, do the usual OpenAI call
+        # For o1-preview or gpt-4o
         openai.api_key = api_key
 
-        # Filter out 'system' role messages if the model does not support them
+        # Filter out 'system' role messages (o1-preview does not support this)
         filtered_message_list = [msg for msg in message_list if msg["role"] != "system"]
         filtered_message_list.append({"role": "user", "content": user_input})
 
@@ -279,6 +274,18 @@ def create_response(user_input, message_list, model="o1-preview"):
             messages=filtered_message_list,
         )
         return completion.choices[0].message.content
+
+        # openai.api_key = api_key
+        #
+        # # Simply append the user's message to the existing list (including system messages)
+        # message_list.append({"role": "user", "content": user_input})
+        #
+        # completion = openai.ChatCompletion.create(
+        #     model=model,
+        #     messages=message_list,  # Pass the entire message_list directly
+        # )
+        # return completion.choices[0].message.content
+
 
 
 

@@ -16,17 +16,30 @@ function getSelectedModel() {
     return selectedModel;
 }
 
-// Fetch the text content
-fetch(`http://127.0.0.1:8000/input_webtext/?textContent=${encodedContent}`, {
+// POST JSON to the server endpoint
+fetch("http://127.0.0.1:8000/input_webtext/", {
     method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+        textContent: textContent,
+        currentUrl: currentUrl
+    }),
 })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Network response was not ok (status: ${response.status})`);
+        }
+        return response.json();
+    })
     .then(data => {
-        console.log("Received back-end response:", data);
+        console.log("Response from server:", data);
     })
     .catch(error => {
-        console.error("Error sending page text to back-end:", error);
+        console.error("There was a problem with your fetch operation:", error);
     });
+
 
 // Function to create and append chat elements
 function appendChatElement(parent, className, text) {
