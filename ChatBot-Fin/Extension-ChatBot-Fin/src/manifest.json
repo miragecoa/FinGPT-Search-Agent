@@ -14,7 +14,8 @@
         "https://finance.yahoo.com/*",
         "https://cdm.finos.org/*",
         "https://www.finos.org/*",
-        "https://mathcup.com/*"
+        "https://mathcup.com/*",
+        "https://www.cnbc.com/*"
       ],
       "js": [
         "content_archive.js"
