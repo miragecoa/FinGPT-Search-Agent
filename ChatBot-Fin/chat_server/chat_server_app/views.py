@@ -13,7 +13,7 @@ from django.http import HttpResponse
 
 message_list = [
     {"role": "user",
-     "content": "You are a helpful financial assistant. Always answer questions to the best of your ability."},
+     "content": "You are a helpful financial assistant. Always answer questions to the best of your ability."}
 ]
 
 
@@ -44,6 +44,37 @@ def Get_A_Number(request):
 #
 #     return response
 
+
+# View to handle appending the site's text to the message list
+@csrf_exempt
+def add_webtext(request):
+    if request.method == 'POST':
+        try:
+            body_data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+        text_content = body_data.get('textContent', '')
+        current_url = body_data.get('currentUrl', '')
+
+        # Basic validation
+        if not text_content:
+            return JsonResponse({"error": "No textContent provided."}, status=400)
+
+        # Stored in USER role as o1-preview does not support system messages
+        message_list.append({
+            "role": "user",
+            "content": text_content
+        })
+
+        # Debug prints
+        print("[DEBUG] current_url:", current_url)
+        print("[DEBUG] message_list updated:", message_list)
+
+        return JsonResponse({"resp": "Text added successfully as user message"})
+    else:
+        # Graceful error handling
+        return JsonResponse({'error': 'Invalid request method; use POST.'}, status=405)
 
 # Ask button
 def chat_response(request):
@@ -112,21 +143,6 @@ def adv_response(request):
 #     message_response = ds.create_response(question, message_list)
 #     print(message_list)
 #     return JsonResponse({'resp': message_response})
-
-
-# View to handle appending the site's text to the message list initiliatlly
-@csrf_exempt
-def add_webtext(request):
-    textContent = request.GET.get('textContent', '')
-
-    # text = ds.data_scrape(weburl)
-    # print(weburl)
-    print(textContent)
-
-    message_list.append({"role": "system", "content": textContent})
-    return JsonResponse({'resp': 'Text added successfully'})  # Return a JsonResponse
-
-    # return JsonResponse({'resp1': text})
 
 
 @csrf_exempt
