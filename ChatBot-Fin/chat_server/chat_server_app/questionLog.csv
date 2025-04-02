@@ -38,3 +38,7 @@ Ask,https://finance.yahoo.com/,How are the stocks doing today?
 Ask,https://finance.yahoo.com/,How are the stocks today?
 Ask,https://www.cnbc.com/2025/03/21/elon-musk-tells-tesla-employees-hang-onto-your-stock-in-all-hands.html,What are some key findings related to Tesla's stock?
 Ask,https://www.cnbc.com/2025/03/21/elon-musk-tells-tesla-employees-hang-onto-your-stock-in-all-hands.html,"Based on this article, what are some key findings related to Tesla's stock?"
+Advanced Ask,https://finance.yahoo.com/?guccounter=1,How is Tesla doing these couple days?
+Advanced Ask,https://finance.yahoo.com/?guccounter=1,"Based on the information provided, how is Tesla doing these several days?"
+Advanced Ask,https://finance.yahoo.com/?guccounter=1,"According to recent sources, how is Tesla doing?"
+Advanced Ask,https://finance.yahoo.com/?guccounter=1,How is Tesla doing these several days?

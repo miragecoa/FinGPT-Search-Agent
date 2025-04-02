@@ -45,7 +45,7 @@ def Get_A_Number(request):
 #     return response
 
 
-# View to handle appending the site's text to the message list
+# View to handle appending the text from FRONT-END SCRAPER to the message list
 @csrf_exempt
 def add_webtext(request):
     if request.method == 'POST':
