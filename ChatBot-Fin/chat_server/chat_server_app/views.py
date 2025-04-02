@@ -1,7 +1,6 @@
 import json
 import os
 import csv
-import request
 import random  # Import 'random' for 'randint'
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
