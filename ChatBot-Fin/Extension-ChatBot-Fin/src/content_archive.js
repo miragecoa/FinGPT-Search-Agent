@@ -1,9 +1,9 @@
 // content_archive.js
 
 const currentUrl = window.location.href.toString();
-console.log(currentUrl);
+console.log("Current page: ", currentUrl);
 
-const textContent = document.body.innerText;
+const textContent = document.body.innerText || "";
 const encodedContent = encodeURIComponent(textContent);
 
 // Available models
@@ -16,20 +16,30 @@ function getSelectedModel() {
     return selectedModel;
 }
 
-// Fetch the text content
-fetch(`http://127.0.0.1:8000/input_webtext/?textContent=${encodedContent}`, { method: "POST" })
+// POST JSON to the server endpoint
+fetch("http://127.0.0.1:8000/input_webtext/", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+        textContent: textContent,
+        currentUrl: currentUrl
+    }),
+})
     .then(response => {
         if (!response.ok) {
-            throw new Error('Network response was not ok');
+            throw new Error(`Network response was not ok (status: ${response.status})`);
         }
         return response.json();
     })
     .then(data => {
-        console.log(data);
+        console.log("Response from server:", data);
     })
     .catch(error => {
-        console.error('There was a problem with your fetch operation:', error);
+        console.error("There was a problem with your fetch operation:", error);
     });
+
 
 // Function to create and append chat elements
 function appendChatElement(parent, className, text) {
@@ -96,7 +106,7 @@ function handleChatResponse(question, isAdvanced = false) {
 
 // Ask button click
 function get_chat_response() {
-    const question = document.getElementById('textbox').value;
+    const question = document.getElementById('textbox').value.trim();
 
     if (question) {
         handleChatResponse(question, false);
@@ -118,45 +128,45 @@ function get_adv_chat_response() {
         return;
     }
 
-    if (isImageMode) {
+    // if (isImageMode) {
         // Image Processing Mode
-        fetch('http://127.0.0.1:8000/process_image/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 'text_prompt': question })
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    handleImageResponse(question, data.description);
-                } else {
-                    alert('Failed to process image.');
-                }
-            })
-            .catch(error => {
-                console.error('Error processing image:', error);
-            });
-    } else {
+    //     fetch('http://127.0.0.1:8000/process_image/', {
+    //         method: 'POST',
+    //         headers: { 'Content-Type': 'application/json' },
+    //         body: JSON.stringify({ 'text_prompt': question })
+    //     })
+    //         .then(response => response.json())
+    //         .then(data => {
+    //             if (data.status === 'success') {
+    //                 handleImageResponse(question, data.description);
+    //             } else {
+    //                 alert('Failed to process image.');
+    //             }
+    //         })
+    //         .catch(error => {
+    //             console.error('Error processing image:', error);
+    //         });
+    // } else {
         // Text Processing Mode
         handleChatResponse(question, true);
         logQuestion(question, 'Advanced Ask');
-    }
+    // }
 
     document.getElementById('textbox').value = '';
 }
 
 // Function to handle image response
-function handleImageResponse(question, description) {
-    const responseContainer = document.getElementById('respons');
-    appendChatElement(responseContainer, 'your_question', question);
-
-    const responseDiv = document.createElement('div');
-    responseDiv.className = 'agent_response';
-    responseDiv.innerText = description;
-    responseContainer.appendChild(responseDiv);
-
-    responseContainer.scrollTop = responseContainer.scrollHeight;
-}
+// function handleImageResponse(question, description) {
+//     const responseContainer = document.getElementById('respons');
+//     appendChatElement(responseContainer, 'your_question', question);
+//
+//     const responseDiv = document.createElement('div');
+//     responseDiv.className = 'agent_response';
+//     responseDiv.innerText = description;
+//     responseContainer.appendChild(responseDiv);
+//
+//     responseContainer.scrollTop = responseContainer.scrollHeight;
+// }
 
 function clear() {
     const response = document.getElementById('respons');
@@ -183,18 +193,19 @@ function clear() {
 
 // Function to get sources
 function get_sources(search_query) {
+    console.log("get_sources called with query:", search_query);
     const sources_window = document.getElementById('sources_window');
     const loadingSpinner = document.getElementById('loading_spinner');
     const source_urls = document.getElementById('source_urls');
 
     sources_window.style.display = 'block';
-    loadingSpinner.style.display = 'block'; // Show the spinner
-    source_urls.style.display = 'none'; // Hide the source list initially
+    loadingSpinner.style.display = 'block';
+    source_urls.style.display = 'none';
 
-    fetch(`http://127.0.0.1:8000/get_source_urls/?query=${String(search_query)}`, { method: "GET" })
+    fetch(`http://127.0.0.1:8000/get_source_urls/?query=${encodeURIComponent(String(search_query))}`, { method: "GET" })
         .then(response => response.json())
         .then(data => {
-            console.log(data["resp"]);
+            console.log("Response from server:", data["resp"]);
             const sources = data["resp"];
             source_urls.innerHTML = '';
 
@@ -212,14 +223,15 @@ function get_sources(search_query) {
                 source_urls.appendChild(listItem);
             });
 
-            loadingSpinner.style.display = 'none'; // Hide spinner
-            source_urls.style.display = 'block'; // Show source list
+            loadingSpinner.style.display = 'none';
+            source_urls.style.display = 'block';
         })
         .catch(error => {
             console.error('There was a problem with your fetch operation:', error);
-            loadingSpinner.style.display = 'none'; // Hide spinner in case of error
+            loadingSpinner.style.display = 'none';
         });
 }
+
 
 // Function to log question
 function logQuestion(question, button) {
@@ -260,6 +272,45 @@ const settingsIcon = document.createElement('span');
 settingsIcon.innerText = "⚙️";
 settingsIcon.className = "icon";
 
+const positionModeIcon = document.createElement('span');
+positionModeIcon.innerText = "📌";
+positionModeIcon.id = "position-mode-icon";
+positionModeIcon.className = "icon";
+positionModeIcon.onclick = function () {
+    if (isFixedMode) {
+        // switch to absolute positioning
+        const rect = popup.getBoundingClientRect();
+
+        const newX = rect.left + window.scrollX
+        const newY = rect.top + window.scrollY
+
+        popup.style.position = "absolute";
+        popup.style.top = `${newY}px`;
+        popup.style.left = `${newX}px`;
+        positionModeIcon.innerText = "📌";
+
+        // settings window positioning update
+        const settingsIconRect = settingsIcon.getBoundingClientRect();
+        settings_window.style.position = "absolute";
+        settings_window.style.top = `${settingsIconRect.bottom + window.scrollY}px`;
+        settings_window.style.left = `${settingsIconRect.left + window.scrollX}px`;
+    } else {
+        // switch to fixed positioning
+        const rect = popup.getBoundingClientRect();
+        popup.style.position = "fixed";
+        popup.style.top = `${rect.top}px`;
+        popup.style.left = `${rect.left}px`;
+        positionModeIcon.innerText = "⛓️‍💥";
+
+        // settings window positioning update
+        const settingsIconRect = settingsIcon.getBoundingClientRect();
+        settings_window.style.position = "fixed";
+        settings_window.style.top = `${settingsIconRect.bottom}px`;
+        settings_window.style.left = `${settingsIconRect.left}px`;
+    }
+    isFixedMode = !isFixedMode; // toggle the mode
+}
+
 const minimizeIcon = document.createElement('span');
 minimizeIcon.innerText = "➖";
 minimizeIcon.className = "icon";
@@ -281,6 +332,7 @@ closeIcon.onclick = function() {
 };
 
 iconContainer.appendChild(settingsIcon);
+iconContainer.appendChild(positionModeIcon);
 iconContainer.appendChild(minimizeIcon);
 iconContainer.appendChild(closeIcon);
 
@@ -321,13 +373,13 @@ textModeButton.id = 'textModeButton';
 textModeButton.innerText = 'Text Mode';
 textModeButton.classList.add('mode-button', 'active-mode');
 
-const imageModeButton = document.createElement('button');
-imageModeButton.id = 'imageModeButton';
-imageModeButton.innerText = 'Image Mode';
-imageModeButton.classList.add('mode-button');
+// const imageModeButton = document.createElement('button');
+// imageModeButton.id = 'imageModeButton';
+// imageModeButton.innerText = 'Image Mode';
+// imageModeButton.classList.add('mode-button');
 
 modeButtonsContainer.appendChild(textModeButton);
-modeButtonsContainer.appendChild(imageModeButton);
+// modeButtonsContainer.appendChild(imageModeButton);
 
 inputContainer.appendChild(modeButtonsContainer);
 
@@ -347,19 +399,19 @@ textbox.addEventListener("keydown", function(event) {
 });
 
 // Initialize isImageMode
-let isImageMode = false;
+// let isImageMode = false;
 
 textModeButton.addEventListener('click', function() {
-    isImageMode = false;
+    // isImageMode = false;
     textModeButton.classList.add('active-mode');
-    imageModeButton.classList.remove('active-mode');
+    // imageModeButton.classList.remove('active-mode');
 });
 
-imageModeButton.addEventListener('click', function() {
-    isImageMode = true;
-    imageModeButton.classList.add('active-mode');
-    textModeButton.classList.remove('active-mode');
-});
+// imageModeButton.addEventListener('click', function() {
+//     isImageMode = true;
+//     imageModeButton.classList.add('active-mode');
+//     textModeButton.classList.remove('active-mode');
+// });
 
 const buttonContainer = document.createElement('div');
 buttonContainer.id = "buttonContainer";
@@ -388,7 +440,12 @@ clearButton.onclick = clear;
 const sourcesButton = document.createElement('button');
 sourcesButton.innerText = "Sources";
 sourcesButton.className = "sources-button";
-sourcesButton.onclick = function() { get_sources(searchQuery); };
+sourcesButton.onclick = function() {
+    console.log("Sources button clicked");
+    const query = typeof searchQuery !== 'undefined' ? searchQuery : "";
+    console.log("Using search query:", query);
+    get_sources(query);
+};
 
 buttonRow.appendChild(sourcesButton);
 buttonRow.appendChild(clearButton);
@@ -402,6 +459,7 @@ popup.appendChild(buttonContainer);
 
 // Settings Window
 const settings_window = document.createElement('div');
+settings_window.style.display = "none";
 settings_window.id = "settings_window";
 
 // Light Mode Toggle
@@ -582,10 +640,13 @@ settingsIcon.onclick = function(event) {
     event.stopPropagation();
 
     const rect = settingsIcon.getBoundingClientRect();
-    settings_window.style.top = `${rect.bottom}px`;
-    settings_window.style.left = `${rect.left}px`;
+    const settingsWindowY = rect.bottom + (isFixedMode ? 0 : window.scrollY)
+    const settingsWindowX = rect.left + (isFixedMode ? 0 : window.scrollX)
+    settings_window.style.top = `${settingsWindowY}px`;
+    settings_window.style.left = `${settingsWindowX}px`;
     settings_window.style.display =
         settings_window.style.display === 'none' ? 'block' : 'none';
+    settings_window.style.position = isFixedMode ? 'fixed' : 'absolute';
 
     // Load preferred links
     if (settings_window.style.display === 'block') {
@@ -599,7 +660,8 @@ document.addEventListener('click', function(event) {
     if (
         settingsWindow.style.display === 'block' &&
         !settingsWindow.contains(event.target) &&
-        !settingsIcon.contains(event.target)
+        !settingsIcon.contains(event.target) &&
+        !positionModeIcon.contains(event.target)
     ) {
         settingsWindow.style.display = 'none';
     }
@@ -651,13 +713,14 @@ popup.style.height = '650px';
 // Make popup draggable and resizable
 let offsetX, offsetY, startX, startY, startWidth, startHeight;
 let sourceWindowOffsetX = 10;
+let isFixedMode = false; // fixedMode => stick to viewport (fixed positioning), otherwise stick to document (absolute positioning)
 
 function makeDraggableAndResizable(element) {
     let isDragging = false;
     let isResizing = false;
 
     element.querySelector('.draggable').addEventListener('mousedown', function(e) {
-        if (['INPUT', 'TEXTAREA', 'BUTTON', 'A'].includes(e.target.tagName)) {
+        if (['INPUT', 'TEXTAREA', 'BUTTON', 'A'].includes(e.target.tagName) || 'position-mode-icon' === e.target.id) {
             return;
         }
 
@@ -686,8 +749,8 @@ function makeDraggableAndResizable(element) {
 
     function dragElement(e) {
         e.preventDefault();
-        const newX = e.clientX - offsetX + window.scrollX;
-        const newY = e.clientY - offsetY + window.scrollY;
+        const newX = e.clientX - offsetX + (isFixedMode ? 0 : window.scrollX);
+        const newY = e.clientY - offsetY + (isFixedMode ? 0 : window.scrollY);
         element.style.left = `${newX}px`;
         element.style.top = `${newY}px`;
 
