@@ -106,7 +106,7 @@ function handleChatResponse(question, isAdvanced = false) {
 
 // Ask button click
 function get_chat_response() {
-    const question = document.getElementById('textbox').value;
+    const question = document.getElementById('textbox').value.trim();
 
     if (question) {
         handleChatResponse(question, false);
@@ -156,17 +156,17 @@ function get_adv_chat_response() {
 }
 
 // Function to handle image response
-function handleImageResponse(question, description) {
-    const responseContainer = document.getElementById('respons');
-    appendChatElement(responseContainer, 'your_question', question);
-
-    const responseDiv = document.createElement('div');
-    responseDiv.className = 'agent_response';
-    responseDiv.innerText = description;
-    responseContainer.appendChild(responseDiv);
-
-    responseContainer.scrollTop = responseContainer.scrollHeight;
-}
+// function handleImageResponse(question, description) {
+//     const responseContainer = document.getElementById('respons');
+//     appendChatElement(responseContainer, 'your_question', question);
+//
+//     const responseDiv = document.createElement('div');
+//     responseDiv.className = 'agent_response';
+//     responseDiv.innerText = description;
+//     responseContainer.appendChild(responseDiv);
+//
+//     responseContainer.scrollTop = responseContainer.scrollHeight;
+// }
 
 function clear() {
     const response = document.getElementById('respons');
@@ -193,18 +193,19 @@ function clear() {
 
 // Function to get sources
 function get_sources(search_query) {
+    console.log("get_sources called with query:", search_query);
     const sources_window = document.getElementById('sources_window');
     const loadingSpinner = document.getElementById('loading_spinner');
     const source_urls = document.getElementById('source_urls');
 
     sources_window.style.display = 'block';
-    loadingSpinner.style.display = 'block'; // Show the spinner
-    source_urls.style.display = 'none'; // Hide the source list initially
+    loadingSpinner.style.display = 'block';
+    source_urls.style.display = 'none';
 
-    fetch(`http://127.0.0.1:8000/get_source_urls/?query=${String(search_query)}`, { method: "GET" })
+    fetch(`http://127.0.0.1:8000/get_source_urls/?query=${encodeURIComponent(String(search_query))}`, { method: "GET" })
         .then(response => response.json())
         .then(data => {
-            console.log(data["resp"]);
+            console.log("Response from server:", data["resp"]);
             const sources = data["resp"];
             source_urls.innerHTML = '';
 
@@ -222,14 +223,15 @@ function get_sources(search_query) {
                 source_urls.appendChild(listItem);
             });
 
-            loadingSpinner.style.display = 'none'; // Hide spinner
-            source_urls.style.display = 'block'; // Show source list
+            loadingSpinner.style.display = 'none';
+            source_urls.style.display = 'block';
         })
         .catch(error => {
             console.error('There was a problem with your fetch operation:', error);
-            loadingSpinner.style.display = 'none'; // Hide spinner in case of error
+            loadingSpinner.style.display = 'none';
         });
 }
+
 
 // Function to log question
 function logQuestion(question, button) {
@@ -438,7 +440,12 @@ clearButton.onclick = clear;
 const sourcesButton = document.createElement('button');
 sourcesButton.innerText = "Sources";
 sourcesButton.className = "sources-button";
-sourcesButton.onclick = function() { get_sources(searchQuery); };
+sourcesButton.onclick = function() {
+    console.log("Sources button clicked");
+    const query = typeof searchQuery !== 'undefined' ? searchQuery : "";
+    console.log("Using search query:", query);
+    get_sources(query);
+};
 
 buttonRow.appendChild(sourcesButton);
 buttonRow.appendChild(clearButton);

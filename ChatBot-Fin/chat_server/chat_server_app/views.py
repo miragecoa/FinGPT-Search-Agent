@@ -59,6 +59,29 @@ def Get_A_Number(request):
     int_response = random.randint(0, 99)
     return JsonResponse({'resp': int_response})
 
+
+# Function to call the locally run Gemma 2B model
+# def call_local_gemma_model(question):
+#     model_path = os.path.join(os.path.dirname(__file__), 'gemma-2-2b-it')
+#
+#     # Load tokenizer and model for Gemma
+#     tokenizer = AutoTokenizer.from_pretrained(model_path)
+#     model = AutoModelForCausalLM.from_pretrained(
+#         model_path,
+#         device_map="auto"
+#     )
+#
+#     # Tokenize and send the question to the model
+#     input_ids = tokenizer(question, return_tensors="pt").to("cuda")  # Use CUDA
+#     outputs = model.generate(**input_ids, max_length=200)
+#
+#     # Decode the response
+#     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+#
+#     return response
+
+
+# View to handle appending the text from FRONT-END SCRAPER to the message list
 @csrf_exempt
 def add_webtext(request):
     """Handle appending the site's text to the message list"""
