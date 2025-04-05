@@ -461,6 +461,7 @@ settingsLabel.innerText = "Light Mode";
 
 const lightModeSwitch = document.createElement('input');
 lightModeSwitch.type = "checkbox";
+lightModeSwitch.style.transform = 'translate(5px, 2px)';
 lightModeSwitch.onchange = function() {
     document.body.classList.toggle('light-mode');
 };
@@ -597,23 +598,97 @@ function loadPreferredLinks() {
         .catch(error => console.error('Error loading preferred links:', error));
 }
 
-// Local RAG Toggle
+// Local RAG Upload
+let RAGPath = '';
+
 const ragLabel = document.createElement('label');
 ragLabel.innerText = "Local RAG";
+ragLabel.setAttribute('for', 'ragSwitch');
 
 const ragSwitch = document.createElement('input');
 ragSwitch.type = "checkbox";
+ragSwitch.name = "ragSwitch";
 ragSwitch.id = "ragSwitch";
+ragSwitch.style.transform = 'translate(5px, 2px)';
+ragSwitch.disabled = true;
 ragSwitch.onchange = function() {
     // Any immediate actions when the checkbox changes can be handled here
+    console.log ("switch value:", ragSwitch.checked);
+
+    if(ragSwitch.checked && RAGPath != '') {
+        console.log("BODY:", JSON.stringify({ 'filePaths': [RAGPath] }));
+        // Making the POST request to Flask
+        fetch('http://127.0.0.1:8000/api/folder_path', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 'filePaths': [RAGPath] })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                console.log("Success:", data.message);
+            } else if (data.error) {
+                console.error("Error:", data.error);
+            }
+        })
+        .catch(error => {
+            console.error("Error processing data:", error);
+        });
+    }
 };
 
-ragLabel.appendChild(ragSwitch);
+const ragForm = document.createElement('form');
+
+const pathLabel = document.createElement('label');
+pathLabel.innerText = "Write the path of local directory you wish to use (ex. C:\\Users\\user\\test):";
+pathLabel.setAttribute('for', 'ragPath');
+
+const ragPath = document.createElement('input');
+ragPath.type = "text";
+ragPath.name = "ragPath";
+ragPath.id = "ragPath";
+ragPath.style.width = "100%";
+
+// <input type="submit" value="Submit">
+const ragFormSubmit = document.createElement('input');
+ragFormSubmit.type = "submit";
+ragFormSubmit.value = "Submit";
+ragFormSubmit.className = "rag-button";
+ragFormSubmit.id = "ragFormSubmit";
+
+// on form submit
+ragForm.onsubmit = function() {
+    if(ragPath.value != '') {
+        RAGPath = ragPath.value;
+        ragSwitch.disabled = false;
+    }
+    
+};
+
+const clearRagButton = document.createElement('input');
+clearRagButton.type = "button";
+clearRagButton.value = "Clear";
+clearRagButton.className = "rag-button";
+clearRagButton.id = "clearRagPath";
+clearRagButton.onclick = function() {
+    RAGPath = '';
+    ragPath.value = '';
+    ragSwitch.disabled = true;
+};
+
+ragForm.appendChild(pathLabel);
+ragForm.appendChild(ragPath);
+ragForm.appendChild(ragFormSubmit);
+ragForm.appendChild(clearRagButton);
 
 preferredLinksContent.appendChild(addLinkButton);
 preferredLinksContainer.appendChild(preferredLinksContent);
 settings_window.appendChild(preferredLinksContainer);
 settings_window.appendChild(ragLabel);
+settings_window.appendChild(ragSwitch);
+settings_window.appendChild(ragForm);
 
 document.body.appendChild(settings_window);
 

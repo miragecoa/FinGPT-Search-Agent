@@ -6,6 +6,7 @@ import random  # Import 'random' for 'randint'
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from datascraper import datascraper as ds
+from datascraper import create_embeddings as ce
 from django.shortcuts import render
 from django.http import HttpResponse
 
@@ -233,6 +234,33 @@ def add_preferred_url(request):
                 file.write(new_url + '\n')
             return JsonResponse({'status': 'success'})
 
+    return JsonResponse({'status': 'failed'}, status=400)
+
+@csrf_exempt
+def folder_path(request):
+    """
+    Upload the folder path for the RAG.
+    """
+    print("[DEBUG] arrived in view with request:", request)
+    if request.method == 'POST':
+        try:
+            body = json.loads(request.body)
+            file_paths = body.get("filePaths", [])
+            print("[DEBUG] file_paths:", file_paths)
+
+            if not file_paths:
+                return JsonResponse({'error': 'No file paths provided'}, status=400)
+
+            # Send POST to Flask API
+            response = ce.upload_folder(file_paths)
+
+            return JsonResponse(response.json(), status=response.status_code)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Only POST requests allowed'}, status=405)
+    
     return JsonResponse({'status': 'failed'}, status=400)
 
 # def get_goog_urls(request):

@@ -50,18 +50,12 @@ def create_faiss_index(embeddings):
     faiss.write_index(index, 'faiss_index.idx')
 
 # API route to handle file paths and process the files
-@app.route('/api/upload_folder', methods=['POST'])
-def upload_folder():
+# @app.route('/api/upload_folder', methods=['POST'])
+def upload_folder(file_paths):
     """
     API endpoint to receive file paths, process the files, generate embeddings,
     and store them.
     """
-    # Get file paths from the request
-    data = request.json
-    file_paths = data.get('filePaths')
-
-    if not file_paths:
-        return jsonify({"error": "No file paths provided"}), 400
 
     embeddings = []
     file_contents = []
