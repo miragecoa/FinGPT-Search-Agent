@@ -18,7 +18,7 @@
         "https://www.cnbc.com/*"
       ],
       "js": [
-        "content_archive.js"
+        "bundle.js"
       ],
       "css": [
         "textbox.css"
