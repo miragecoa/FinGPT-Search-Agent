@@ -21,35 +21,55 @@ message_list = [
 
 # Helper functions
 def _ensure_log_file_exists():
-    """Create log file with headers if it doesn't exist"""
+    """Create log file with headers if it doesn't exist, using UTF-8 encoding."""
     if not os.path.isfile(QUESTION_LOG_PATH):
-        with open(QUESTION_LOG_PATH, 'w', newline='') as log_file:
+        with open(QUESTION_LOG_PATH, 'w', newline='', encoding='utf-8') as log_file:
             writer = csv.writer(log_file)
             writer.writerow(['Button', 'URL', 'Question', 'Date', 'Time', 'Response_Preview'])
 
 def _log_interaction(button_clicked, current_url, question, response=None):
-    """Log interaction details with timestamp and response preview"""
+    """
+    Log interaction details with timestamp and response preview.
+    Uses UTF-8 with `errors="replace"` to avoid decode errors for unexpected bytes.
+    """
     _ensure_log_file_exists()
-    
+
     now = datetime.now()
     date_str = now.strftime('%Y-%m-%d')
     time_str = now.strftime('%H:%M:%S')
-    
-    # Get response preview (first 50 chars) if available
+
+    # Safe-guard each field in case it contains invalid chars.
+    def safe_str(s):
+        # Convert to string, encode to utf-8 ignoring errors, then decode back.
+        return str(s).encode('utf-8', errors='replace').decode('utf-8')
+
+    # Only record first 50 chars of the response
     response_preview = response[:50] if response else "N/A"
-    
+
+    # Clean each field before writing
+    button_clicked = safe_str(button_clicked)
+    current_url = safe_str(current_url)
+    question = safe_str(question)
+    response_preview = safe_str(response_preview)
+
     # Check if identical question from same URL exists
     question_exists = False
-    with open(QUESTION_LOG_PATH, 'r') as file:
+    # Read using UTF-8 and replace invalid bytes
+    with open(QUESTION_LOG_PATH, 'r', encoding='utf-8', errors='replace') as file:
         reader = csv.reader(file)
         next(reader, None)  # Skip header
         for row in reader:
-            if len(row) >= 3 and row[1] == current_url and row[2] == question:
-                question_exists = True
-                break
-    
+            # Make sure row is long enough to avoid index errors
+            if len(row) >= 3:
+                existing_url = row[1]
+                existing_question = row[2]
+                # Compare with sanitized inputs
+                if existing_url == current_url and existing_question == question:
+                    question_exists = True
+                    break
+
     if not question_exists:
-        with open(QUESTION_LOG_PATH, 'a', newline='') as log_file:
+        with open(QUESTION_LOG_PATH, 'a', newline='', encoding='utf-8', errors='replace') as log_file:
             writer = csv.writer(log_file)
             writer.writerow([button_clicked, current_url, question, date_str, time_str, response_preview])
 
