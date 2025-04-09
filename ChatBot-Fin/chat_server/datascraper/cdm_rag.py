@@ -60,7 +60,9 @@ def load_index_and_embeddings(index_file='faiss_index.idx', embeddings_file='emb
     """
     index = faiss.read_index(index_file)
     with open(embeddings_file, 'rb') as f:
-        embeddings = pickle.load(f)
+        embeddings_data = pickle.load(f)
+        embeddings = embeddings_data['embeddings']
+
     return index, embeddings
 
 def embed_query(query, model="text-embedding-3-large"):
