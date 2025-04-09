@@ -1,21 +1,26 @@
 import json
 import os
 import csv
-import request
-import random  # Import 'random' for 'randint'
+import random
+from datetime import datetime
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from datascraper import datascraper as ds
-from datascraper import create_embeddings as ce
 from django.shortcuts import render
 from django.http import HttpResponse
 
 # from transformers import AutoTokenizer, AutoModelForCausalLM
 
+# Constants
+QUESTION_LOG_PATH = os.path.join(os.path.dirname(__file__), 'questionLog.csv')
+PREFERRED_URLS_FILE = 'preferred_urls.txt'
+
+# Initial message list
 message_list = [
     {"role": "user",
      "content": "You are a helpful financial assistant. Always answer questions to the best of your ability."}
 ]
+
 
 
 
@@ -44,6 +49,60 @@ def Get_A_Number(request):
 #     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
 #
 #     return response
+
+# Helper functions
+def _ensure_log_file_exists():
+    """Create log file with headers if it doesn't exist, using UTF-8 encoding."""
+    if not os.path.isfile(QUESTION_LOG_PATH):
+        with open(QUESTION_LOG_PATH, 'w', newline='', encoding='utf-8') as log_file:
+            writer = csv.writer(log_file)
+            writer.writerow(['Button', 'URL', 'Question', 'Date', 'Time', 'Response_Preview'])
+
+def _log_interaction(button_clicked, current_url, question, response=None):
+    """
+    Log interaction details with timestamp and response preview.
+    Uses UTF-8 with `errors="replace"` to avoid decode errors for unexpected bytes.
+    """
+    _ensure_log_file_exists()
+
+    now = datetime.now()
+    date_str = now.strftime('%Y-%m-%d')
+    time_str = now.strftime('%H:%M:%S')
+
+    # Safe-guard each field in case it contains invalid chars.
+    def safe_str(s):
+        # Convert to string, encode to utf-8 ignoring errors, then decode back.
+        return str(s).encode('utf-8', errors='replace').decode('utf-8')
+
+    # Only record first 50 chars of the response
+    response_preview = response[:50] if response else "N/A"
+
+    # Clean each field before writing
+    button_clicked = safe_str(button_clicked)
+    current_url = safe_str(current_url)
+    question = safe_str(question)
+    response_preview = safe_str(response_preview)
+
+    # Check if identical question from same URL exists
+    question_exists = False
+    # Read using UTF-8 and replace invalid bytes
+    with open(QUESTION_LOG_PATH, 'r', encoding='utf-8', errors='replace') as file:
+        reader = csv.reader(file)
+        next(reader, None)  # Skip header
+        for row in reader:
+            # Make sure row is long enough to avoid index errors
+            if len(row) >= 3:
+                existing_url = row[1]
+                existing_question = row[2]
+                # Compare with sanitized inputs
+                if existing_url == current_url and existing_question == question:
+                    question_exists = True
+                    break
+
+    if not question_exists:
+        with open(QUESTION_LOG_PATH, 'a', newline='', encoding='utf-8', errors='replace') as log_file:
+            writer = csv.writer(log_file)
+            writer.writerow([button_clicked, current_url, question, date_str, time_str, response_preview])
 
 
 # View to handle appending the site's text to the message list
@@ -173,40 +232,17 @@ def get_logo(request):
     return JsonResponse({'resp', logo_src})
 
 
-# log questions
+# Legacy log_question function maintained for compatibility
 def log_question(request):
+    """Legacy question logging (redirects to enhanced logging)"""
     question = request.GET.get('question', '')
     button_clicked = request.GET.get('button', '')
     current_url = request.GET.get('current_url', '')
 
-    # tmp PATH
-    log_path = os.path.join(os.path.dirname(__file__), 'questionLog.csv')
-
-    file_exists = os.path.isfile(log_path)
-
     if question and button_clicked and current_url:
-        # Check if the same question has already been asked on the same URL
-        question_exists = False
-        if os.path.exists(log_path):
-            with open(log_path, 'r') as file:
-                reader = csv.reader(file)
-                for row in reader:
-                    if row[1] == current_url and row[2] == question:
-                        question_exists = True
-                        break
-
-        if not question_exists:
-            with open(log_path, 'a', newline='') as log_file:
-                writer = csv.writer(log_file)
-                if not file_exists:
-                    writer.writerow(['Button', 'URL', 'Question'])
-                writer.writerow([button_clicked, current_url, question])
+        _log_interaction(button_clicked, current_url, question)
 
     return JsonResponse({'status': 'success'})
-
-
-# File path for storing preferred URLs ONLY TEMPORARY SOLUTION
-PREFERRED_URLS_FILE = 'preferred_urls.txt'
 
 
 def get_preferred_urls(request):
@@ -285,3 +321,15 @@ def folder_path(request):
 
 #     list_urls = ds.get_goog_urls(search_query)
 #     return JsonResponse({'resp': list_urls})
+
+
+
+
+
+
+
+
+
+
+
+
