@@ -598,6 +598,48 @@ function loadPreferredLinks() {
         .catch(error => console.error('Error loading preferred links:', error));
 }
 
+// Extract text from pdf and docx
+// import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@2.11.338/es5/build/pdf.js';
+// import mammoth from 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js';
+
+
+// // Set workerSrc to load PDF.js worker from CDN
+// pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+async function extractTextFromPDF(file) {
+    
+    // Access global libraries from window
+    // Check if libraries are available
+    // In newer versions of PDF.js, the library might be accessible as window.pdfjsLib or just pdf
+    const pdfjsLib = window.pdfjsLib || window.pdf || window.pdfjsNamespace;
+
+    console.log("PDF.js loaded:", typeof pdfjsLib !== 'undefined');
+    console.log("Mammoth loaded:", typeof window.mammoth !== 'undefined');
+
+    
+    // Set worker path - this is crucial for PDF.js to work
+    if (pdfjsLib) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let text = '';
+
+    for (let i = 0; i < pdf.numPages; i++) {
+        const page = await pdf.getPage(i + 1);
+        const content = await page.getTextContent();
+        const pageText = content.items.map(item => item.str).join(' ');
+        text += pageText + '\n';
+    }
+    return text;
+}
+
+async function extractTextFromDocx(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const result = await mammoth.extractRawText({ arrayBuffer });
+  return result.value;
+}
+
 // Local RAG Upload
 let RAGPath = '';
 
@@ -611,19 +653,53 @@ ragSwitch.name = "ragSwitch";
 ragSwitch.id = "ragSwitch";
 ragSwitch.style.transform = 'translate(5px, 2px)';
 ragSwitch.disabled = true;
-ragSwitch.onchange = function() {
+ragSwitch.onchange = async function() {
     // Any immediate actions when the checkbox changes can be handled here
     console.log ("switch value:", ragSwitch.checked);
 
+    
     if(ragSwitch.checked && RAGPath != '') {
         console.log("BODY:", JSON.stringify({ 'filePaths': [RAGPath] }));
+       
+        // Retrieve all file contents
+        const fileHandles = [];
+        for await (const entry of RAGPath.values()) {
+            if (entry.kind === 'file') {
+                fileHandles.push(entry);  // Store file handles
+            }
+        }
+        const filesPromises = fileHandles.map(async (handle) => {
+            const file = await handle.getFile();
+            const ext = file.name.split('.').pop().toLowerCase();
+            console.log(`[DEBUG] extension: ${ext}`)
+            let text = "hello";
+            if (ext === 'txt') {
+                text = await file.text();
+            } else if (ext === 'pdf') {
+                text = await extractTextFromPDF(file);
+            } else if (ext === 'docx') {
+                text = await extractTextFromDocx(file);
+            } else {
+                console.warn(`Unsupported file type: ${file.name}`);
+            }
+            console.log(`[DEBUG] extension: ${text}`)
+            return { name: file.name, content: text };
+        });
+        const filesData = await Promise.all(filesPromises);
+        console.log("filesdata: ", filesData);
+        
+        // Create a FormData object
+        const formData = new FormData();
+
+        // Convert your data to a JSON string and add it as a file
+        const jsonBlob = new Blob([JSON.stringify({ 'filePaths': filesData })], 
+                           { type: 'application/json' });
+        formData.append('json_data', jsonBlob, 'data.json');
+
         // Making the POST request to Flask
         fetch('http://127.0.0.1:8000/api/folder_path', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ 'filePaths': [RAGPath] })
+            body: formData
         })
         .then(response => response.json())
         .then(data => {
@@ -651,6 +727,34 @@ ragPath.name = "ragPath";
 ragPath.id = "ragPath";
 ragPath.style.width = "100%";
 
+// Create a button for directory selection
+const directoryButton = document.createElement('button');
+directoryButton.type = "button";
+directoryButton.innerText = "Select Directory";
+directoryButton.className = "rag-button";
+directoryButton.id = "selectDirectory";
+directoryButton.onclick = async function() {
+    try {
+        // Check if the File System Access API is available
+        if ('showDirectoryPicker' in window) {
+            const dirHandle = await window.showDirectoryPicker();
+            // Get directory path or name
+            RAGPath = dirHandle;
+            ragPath.value = RAGPath.name;
+            ragSwitch.disabled = false;
+            console.log("Selected directory:", RAGPath);
+        } else {
+            alert("Your browser doesn't support directory selection. Please enter the path manually.");
+        }
+    } catch (error) {
+        console.error("Error selecting directory:", error);
+        if (error.name !== 'AbortError') {
+            alert("Error selecting directory: " + error.message);
+        }
+    }
+};
+
+
 // <input type="submit" value="Submit">
 const ragFormSubmit = document.createElement('input');
 ragFormSubmit.type = "submit";
@@ -659,12 +763,13 @@ ragFormSubmit.className = "rag-button";
 ragFormSubmit.id = "ragFormSubmit";
 
 // on form submit
-ragForm.onsubmit = function() {
+ragForm.onsubmit = function(e) {
+    e.preventDefault(); // Prevent default form submission
     if(ragPath.value != '') {
         RAGPath = ragPath.value;
         ragSwitch.disabled = false;
     }
-    
+    return false;
 };
 
 const clearRagButton = document.createElement('input');
@@ -680,6 +785,8 @@ clearRagButton.onclick = function() {
 
 ragForm.appendChild(pathLabel);
 ragForm.appendChild(ragPath);
+ragForm.appendChild(directoryButton);
+ragForm.appendChild(document.createElement('br')); // Line break
 ragForm.appendChild(ragFormSubmit);
 ragForm.appendChild(clearRagButton);
 

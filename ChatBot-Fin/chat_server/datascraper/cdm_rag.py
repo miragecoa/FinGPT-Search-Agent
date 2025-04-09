@@ -67,11 +67,17 @@ def embed_query(query, model="text-embedding-3-large"):
     """
     Generates an embedding for the query text.
     """
-    response = openai.Embedding.create(
+    # response = openai.Embedding.create(
+    #     input=query,
+    #     model=model
+    # )
+    # return response['data'][0]['embedding']
+    response = openai.embeddings.create(
         input=query,
         model=model
     )
-    return response['data'][0]['embedding']
+    return response.data[0].embedding
+    
 
 def retrieve_chunks(query, index, embeddings, k=8):
     """
@@ -80,6 +86,9 @@ def retrieve_chunks(query, index, embeddings, k=8):
     query_embedding = embed_query(query)
     query_vector = np.array([query_embedding]).astype('float32')
     faiss.normalize_L2(query_vector)
+
+    print("Document embedding shape:", np.array(embeddings).shape)
+    print("Query vector shape:", query_vector.shape)
 
     # Search the index
     distances, indices = index.search(query_vector, k)

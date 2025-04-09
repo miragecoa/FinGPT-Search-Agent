@@ -18,7 +18,7 @@ def client():
 @patch("create_embeddings.store_embeddings")
 @patch("create_embeddings.create_faiss_index")
 def test_upload_folder(mock_faiss, mock_store, mock_embed, mock_file, client):
-    file_paths = ["test_file_1.txt", "test_file_2.txt"]
+    file_paths = ["test_file_1.txt", "test_file_2.pdf"]
     response = client.post("/api/upload_folder", 
                            data=json.dumps({"filePaths": file_paths}),
                            content_type="application/json")
