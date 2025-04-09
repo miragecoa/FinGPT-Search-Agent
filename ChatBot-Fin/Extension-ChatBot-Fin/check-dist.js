@@ -20,7 +20,7 @@ for (const file of requiredFiles) {
 }
 
 if (allGood) {
-  console.log(`\n🎉 All required files are present in dist/. Ready to load into Chrome!\n`);
+  console.log(`\n🎉 All required files are present in dist/. Update the plugin in your browser to verify the updates!\n`);
   process.exit(0);
 } else {
   console.error(`\n🚨 Some files are missing. Make sure Webpack and copy-webpack-plugin ran correctly.\n`);
