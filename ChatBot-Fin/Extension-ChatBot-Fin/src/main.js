@@ -1,4 +1,4 @@
-// content_archive.js
+// main.js
 import { postWebTextToServer } from './modules/api.js';
 import { createUI } from './modules/ui.js';
 
