@@ -1,3 +1,4 @@
+# cdm_rag.py
 from dotenv import load_dotenv
 import os
 # import re
@@ -24,35 +25,34 @@ logging.basicConfig(
 
 # Global variables for index and embeddings
 index = None
-embeddings = None
+all_chunks = None
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 def initialize_rag():
     """
-    Initializes the RAG components by loading the FAISS index and embeddings.
-    If either file is missing, reports that it's missing.
+    Initializes the RAG components by loading the FAISS index and chunk list.
     """
-    global index, embeddings
+    global index, all_chunks
     index_file = os.path.join(current_dir, 'faiss_index.idx')
     embeddings_file = os.path.join(current_dir, 'embeddings.pkl')
 
-    # Check if both files exist
     if os.path.exists(index_file) and os.path.exists(embeddings_file):
-        index, embeddings = load_index_and_embeddings(index_file, embeddings_file)
-        print("Loaded existing FAISS index and embeddings.")
+        # Load FAISS index
+        index = faiss.read_index(index_file)
+
+        # Load chunks list (with text, metadata, embedding)
+        with open(embeddings_file, 'rb') as f:
+            all_chunks = pickle.load(f)
+
+        print("Loaded existing FAISS index and chunk data.")
     else:
-        missing_files = []
+        missing = []
         if not os.path.exists(index_file):
-            missing_files.append(index_file)
+            missing.append(index_file)
         if not os.path.exists(embeddings_file):
-            missing_files.append(embeddings_file)
-        missing_files_str = ', '.join(missing_files)
-        error_message = f"The following file(s) are missing: {missing_files_str}. Please ensure they are present."
-        print(error_message)
-        logging.error(error_message)
-        # Raise an exception to be handled by the calling function
-        raise FileNotFoundError(error_message)
+            missing.append(embeddings_file)
+        raise FileNotFoundError(f"Missing files for RAG: {', '.join(missing)}")
 
 def load_index_and_embeddings(index_file='faiss_index.idx', embeddings_file='embeddings.pkl'):
     """
@@ -79,37 +79,43 @@ def embed_query(query, model="text-embedding-3-large"):
         model=model
     )
     return response['data'][0]['embedding']
-    
 
-def retrieve_chunks(query, index, embeddings, k=8):
+
+def retrieve_chunks(query, k=1):
     """
-    Retrieves the most relevant text chunks for a given query.
+    Retrieves the most relevant chunks for a given query.
     """
+    global index, all_chunks
+    if index is None or all_chunks is None:
+        initialize_rag()
+
+    # Prepare the query vector
     query_embedding = embed_query(query)
-    query_vector = np.array([query_embedding]).astype('float32')
-    faiss.normalize_L2(query_vector)
+    query_vector = np.array([query_embedding], dtype='float32')
+    faiss.normalize_L2(query_vector)  # Normalizing if index was built from normalized embeddings
 
-    print("Document embedding shape:", np.array(embeddings).shape)
-    print("Query vector shape:", query_vector.shape)
+    # Search
+    distances, idxs = index.search(query_vector, k)
+    # idxs is shape (1, k), e.g. [[1, 10, 0, ...]]
 
-    # Search the index
-    distances, indices = index.search(query_vector, k)
-    print("indices: ", indices)
-    results = [embeddings[i] for i in indices[0]]
-
+    # Map each index to the chunk in `all_chunks`
+    results = [all_chunks[i] for i in idxs[0]]
     return results
 
 def generate_answer(query, relevant_chunks, model_name):
     """
     Generates an answer to the query using the specified model and the relevant context.
     """
-    # Construct context from retrieved chunks
-    context = ''
+    # Build a string context from the chunk data
+    context = ""
     for chunk in relevant_chunks:
-        context += f"File: {chunk['metadata']['file_path']}\nContent:\n{chunk['text']}\n\n"
+        file_path = chunk['metadata']['file_path']
+        text = chunk['text']
+        context += f"File: {file_path}\nContent:\n{text}\n\n"
 
-    prompt = f"""You are a CDM expert providing detailed and accurate answers.
-
+    # prompt
+    prompt = f"""You are a helpful financial advisor providing detailed and accurate answers.
+    
 Context:
 {context}
 
@@ -122,45 +128,38 @@ Answer as thoroughly as possible based on the context provided."""
     response = openai.ChatCompletion.create(
         model=model_name,
         messages=[
-            {'role': 'system', 'content': 'You are a CDM expert providing detailed and accurate answers.'},
-            {'role': 'user', 'content': prompt}
+            {'role': 'user', 'content': 'You are a helpful financial advisor providing detailed and accurate answers.' + prompt}
         ],
-        temperature=0.1,  # Lower temperature for more precise answers
-        max_tokens=1500  # Adjust as necessary
+        temperature=1,  # Lower temperature for more precise answers
+        max_completion_tokens=1500  # Adjust as necessary
     )
 
     answer = response['choices'][0]['message']['content']
     return answer.strip()
 
-def get_rag_response(question, model_name):
+def get_rag_response(question, model_name="o1-preview"):
     """
     Generates a response using the RAG pipeline with the specified model.
     """
-    global index, embeddings
-    if index is None or embeddings is None:
+    if index is None or all_chunks is None:
         initialize_rag()
 
-    # Retrieve relevant chunks
-    print("Retrieving chunks")
-    relevant_chunks = retrieve_chunks(question, index, embeddings)
-    print("Retrieved relevant chunks")
+        # 1. Retrieve relevant chunks
+    relevant_chunks = retrieve_chunks(question, k=1)
 
-    # Log the retrieved chunks at INFO level
+    # 2. Log them
     logging.info("\nRetrieved Chunks:")
-    for i, chunk in enumerate(relevant_chunks):
-        logging.info(f"\nChunk {i + 1}:")
+    for i, chunk in enumerate(relevant_chunks, start=1):
+        logging.info(f"Chunk {i}:")
         logging.info(f"File: {chunk['metadata']['file_path']}")
         logging.info(f"Content:\n{chunk['text']}")
 
-    print("Logged info")
-
-    # Generate answer
+    # 3. Generate an answer
     answer = generate_answer(question, relevant_chunks, model_name)
-
     return answer
 
 
-def get_rag_advanced_response(question, model_name):
+def get_rag_advanced_response(question, model_name="o1-preview"):
     """
     Generates an advanced response using the RAG pipeline.
     """

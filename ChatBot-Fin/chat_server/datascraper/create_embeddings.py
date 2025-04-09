@@ -1,3 +1,4 @@
+# create_embeddings.py
 from dotenv import load_dotenv
 import os
 import openai
@@ -39,68 +40,74 @@ def store_embeddings(embeddings, file_paths):
         pickle.dump(embeddings_data, f)
 
 # Helper function to create a FAISS index
-def create_faiss_index(embeddings):
+def create_faiss_index(chunks):
     """
-    Create and store a FAISS index from embeddings.
+    Create and store a FAISS index from the embeddings in `chunks`.
+    Each item in `chunks` is expected to be a dict with key "embedding".
     """
-    dimension = len(embeddings[0])  # Embedding dimension
-    index = faiss.IndexFlatL2(dimension)  # L2 distance metric for similarity search
+    # Assume at least one chunk
+    dimension = len(chunks[0]["embedding"])
+    index = faiss.IndexFlatL2(dimension)  # L2 distance metric
     print("Creating index with dimension:", dimension)
 
-    # Convert embeddings to numpy array and add to FAISS index
-    embeddings_np = np.array(embeddings).astype('float32')
+    # Extract all embeddings into a NumPy array
+    embeddings_np = np.array(
+        [chunk["embedding"] for chunk in chunks], dtype='float32'
+    )
     index.add(embeddings_np)
     print("Embeddings numpy shape:", embeddings_np.shape)
 
-    print(type(embeddings))
-    print(len(embeddings))
-    print(type(embeddings[0]))
-    print(len(embeddings[0]))
-
-    # Store FAISS index to disk
+    # Store
     faiss.write_index(index, index_file)
 
 def upload_folder(data):
     """
-    Function to process files that can be called directly from other code
+    Process incoming files and store chunk dictionaries (with text, metadata, embedding).
     """
     try:
-        print("[DEBUG] Starting upload_folder with files:", len(data))
-        
-        embeddings = []
-        file_contents = []
-        print("[DEBUG] data: ", data)
-        files = data.get('filePaths')
+        print("[DEBUG] Starting upload_folder with data:", data)
 
-        # Process each file content
-        for file in files:
-            try:
-                print("[DEBUG] file: ", file)
-                file_name = file.get('name')
-                file_content = file.get('content')
-                print("[DEBUG] name: ", file_name)
-                print("[DEBUG] content length: ", len(file_content) if file_content else None)
+        # This will be your master list of chunk dictionaries
+        chunks_list = []
 
-                if file_name and file_content:
-                    # Generate embedding and store file content for processing
-                    embedding = embed_file_content(file_content)
-                    print("[DEBUG] embedding: ", embedding)
-                    embeddings.append(embedding)
-                    file_contents.append(file_content)
-            except Exception as e:
-                print(f"[DEBUG] Error processing file: {str(e)}")
-                continue
+        files = data.get('filePaths', [])
+        print("[DEBUG] files array:", files)
 
-        # Store embeddings and file paths
-        store_embeddings(embeddings, [f.get('name') for f in files])
-        print("[DEBUG] embeddings stored")
+        # Process each "file"
+        for file_item in files:
+            file_name = file_item.get('name')
+            file_content = file_item.get('content')
+            if file_name and file_content:
+                print(f"[DEBUG] Processing file: {file_name}, length of content: {len(file_content)}")
 
-        # Create and store a FAISS index
-        create_faiss_index(embeddings)
-        print("[DEBUG] FAISS index created")
+                # Create the embedding for this file's content
+                embedding = embed_file_content(file_content)
+
+                # Build the chunk dictionary
+                chunk_dict = {
+                    "text": file_content,
+                    "metadata": {
+                        "file_path": file_name
+                    },
+                    "embedding": embedding
+                }
+                chunks_list.append(chunk_dict)
+
+        # Now pickle the entire list
+        with open(embeddings_file, 'wb') as f:
+            pickle.dump(chunks_list, f)
+
+        print("[DEBUG] Saved chunks to embeddings.pkl")
+
+        # Create a FAISS index
+        if len(chunks_list) > 0:
+            create_faiss_index(chunks_list)
+            print("[DEBUG] FAISS index created.")
+        else:
+            print("[DEBUG] No valid chunks found; not creating FAISS index.")
 
         return {"message": "Files processed, embeddings stored, and FAISS index created."}, 200
-    
+
     except Exception as e:
         print(f"[DEBUG] Unexpected error in upload_folder: {str(e)}")
         return {"error": f"Server error: {str(e)}"}, 500
