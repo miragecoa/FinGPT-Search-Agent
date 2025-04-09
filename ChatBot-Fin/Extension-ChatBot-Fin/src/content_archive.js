@@ -641,7 +641,7 @@ async function extractTextFromDocx(file) {
 }
 
 // Local RAG Upload
-let RAGPath = '';
+let ragPath = '';
 
 const ragLabel = document.createElement('label');
 ragLabel.innerText = "Local RAG";
@@ -658,12 +658,12 @@ ragSwitch.onchange = async function() {
     console.log ("switch value:", ragSwitch.checked);
 
     
-    if(ragSwitch.checked && RAGPath != '') {
-        console.log("BODY:", JSON.stringify({ 'filePaths': [RAGPath] }));
+    if(ragSwitch.checked && ragPath != '') {
+        console.log("BODY:", JSON.stringify({ 'filePaths': [ragPath] }));
        
         // Retrieve all file contents
         const fileHandles = [];
-        for await (const entry of RAGPath.values()) {
+        for await (const entry of ragPath.values()) {
             if (entry.kind === 'file') {
                 fileHandles.push(entry);  // Store file handles
             }
@@ -717,15 +717,8 @@ ragSwitch.onchange = async function() {
 
 const ragForm = document.createElement('form');
 
-const pathLabel = document.createElement('label');
-pathLabel.innerText = "Write the path of local directory you wish to use (ex. C:\\Users\\user\\test):";
-pathLabel.setAttribute('for', 'ragPath');
-
-const ragPath = document.createElement('input');
-ragPath.type = "text";
-ragPath.name = "ragPath";
-ragPath.id = "ragPath";
-ragPath.style.width = "100%";
+const pathText = document.createElement('p');
+pathText.innerText = "";
 
 // Create a button for directory selection
 const directoryButton = document.createElement('button');
@@ -739,12 +732,12 @@ directoryButton.onclick = async function() {
         if ('showDirectoryPicker' in window) {
             const dirHandle = await window.showDirectoryPicker();
             // Get directory path or name
-            RAGPath = dirHandle;
-            ragPath.value = RAGPath.name;
+            ragPath = dirHandle;
+            pathText.innerText = dirHandle.name;
             ragSwitch.disabled = false;
-            console.log("Selected directory:", RAGPath);
+            console.log("Selected directory:", ragPath);
         } else {
-            alert("Your browser doesn't support directory selection. Please enter the path manually.");
+            alert("Your browser doesn't support directory selection.");
         }
     } catch (error) {
         console.error("Error selecting directory:", error);
@@ -755,39 +748,20 @@ directoryButton.onclick = async function() {
 };
 
 
-// <input type="submit" value="Submit">
-const ragFormSubmit = document.createElement('input');
-ragFormSubmit.type = "submit";
-ragFormSubmit.value = "Submit";
-ragFormSubmit.className = "rag-button";
-ragFormSubmit.id = "ragFormSubmit";
-
-// on form submit
-ragForm.onsubmit = function(e) {
-    e.preventDefault(); // Prevent default form submission
-    if(ragPath.value != '') {
-        RAGPath = ragPath.value;
-        ragSwitch.disabled = false;
-    }
-    return false;
-};
-
 const clearRagButton = document.createElement('input');
 clearRagButton.type = "button";
 clearRagButton.value = "Clear";
 clearRagButton.className = "rag-button";
 clearRagButton.id = "clearRagPath";
 clearRagButton.onclick = function() {
-    RAGPath = '';
-    ragPath.value = '';
+    ragPath = '';
+    pathText.innerText = '';
     ragSwitch.disabled = true;
 };
 
-ragForm.appendChild(pathLabel);
-ragForm.appendChild(ragPath);
+ragForm.appendChild(pathText);
 ragForm.appendChild(directoryButton);
 ragForm.appendChild(document.createElement('br')); // Line break
-ragForm.appendChild(ragFormSubmit);
 ragForm.appendChild(clearRagButton);
 
 preferredLinksContent.appendChild(addLinkButton);
