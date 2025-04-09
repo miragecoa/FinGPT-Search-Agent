@@ -1,4 +1,3 @@
-from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 import os
 import openai
@@ -24,11 +23,11 @@ def embed_file_content(file_content):
     """
     Function to send file content to OpenAI's embedding API and get embeddings.
     """
-    response = openai.embeddings.create(
+    response = openai.Embedding.create(
         input=file_content,
-        model="text-embedding-ada-002"  # OpenAI's embedding model
+        model="text-embedding-3-large"
     )
-    return response.data[0].embedding
+    return response['data'][0]['embedding']
 
 # Helper function to store embeddings (pickling embeddings)
 def store_embeddings(embeddings, file_paths):

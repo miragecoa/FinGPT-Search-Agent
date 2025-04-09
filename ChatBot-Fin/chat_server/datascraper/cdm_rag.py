@@ -72,11 +72,11 @@ def embed_query(query, model="text-embedding-3-large"):
     #     model=model
     # )
     # return response['data'][0]['embedding']
-    response = openai.embeddings.create(
+    response = openai.Embedding.create(
         input=query,
         model=model
     )
-    return response.data[0].embedding
+    return response['data'][0]['embedding']
     
 
 def retrieve_chunks(query, index, embeddings, k=8):
@@ -92,6 +92,7 @@ def retrieve_chunks(query, index, embeddings, k=8):
 
     # Search the index
     distances, indices = index.search(query_vector, k)
+    print("indices: ", indices)
     results = [embeddings[i] for i in indices[0]]
 
     return results
@@ -138,7 +139,9 @@ def get_rag_response(question, model_name):
         initialize_rag()
 
     # Retrieve relevant chunks
+    print("Retrieving chunks")
     relevant_chunks = retrieve_chunks(question, index, embeddings)
+    print("Retrieved relevant chunks")
 
     # Log the retrieved chunks at INFO level
     logging.info("\nRetrieved Chunks:")
@@ -146,6 +149,8 @@ def get_rag_response(question, model_name):
         logging.info(f"\nChunk {i + 1}:")
         logging.info(f"File: {chunk['metadata']['file_path']}")
         logging.info(f"Content:\n{chunk['text']}")
+
+    print("Logged info")
 
     # Generate answer
     answer = generate_answer(question, relevant_chunks, model_name)
