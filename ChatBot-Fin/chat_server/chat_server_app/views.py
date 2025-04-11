@@ -6,6 +6,7 @@ from datetime import datetime
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from datascraper import datascraper as ds
+from datascraper import create_embeddings as ce
 from django.shortcuts import render
 from django.http import HttpResponse
 
@@ -21,35 +22,55 @@ message_list = [
 
 # Helper functions
 def _ensure_log_file_exists():
-    """Create log file with headers if it doesn't exist"""
+    """Create log file with headers if it doesn't exist, using UTF-8 encoding."""
     if not os.path.isfile(QUESTION_LOG_PATH):
-        with open(QUESTION_LOG_PATH, 'w', newline='') as log_file:
+        with open(QUESTION_LOG_PATH, 'w', newline='', encoding='utf-8') as log_file:
             writer = csv.writer(log_file)
             writer.writerow(['Button', 'URL', 'Question', 'Date', 'Time', 'Response_Preview'])
 
 def _log_interaction(button_clicked, current_url, question, response=None):
-    """Log interaction details with timestamp and response preview"""
+    """
+    Log interaction details with timestamp and response preview.
+    Uses UTF-8 with `errors="replace"` to avoid decode errors for unexpected bytes.
+    """
     _ensure_log_file_exists()
-    
+
     now = datetime.now()
     date_str = now.strftime('%Y-%m-%d')
     time_str = now.strftime('%H:%M:%S')
-    
-    # Get response preview (first 50 chars) if available
+
+    # Safe-guard each field in case it contains invalid chars.
+    def safe_str(s):
+        # Convert to string, encode to utf-8 ignoring errors, then decode back.
+        return str(s).encode('utf-8', errors='replace').decode('utf-8')
+
+    # Only record first 50 chars of the response
     response_preview = response[:50] if response else "N/A"
-    
+
+    # Clean each field before writing
+    button_clicked = safe_str(button_clicked)
+    current_url = safe_str(current_url)
+    question = safe_str(question)
+    response_preview = safe_str(response_preview)
+
     # Check if identical question from same URL exists
     question_exists = False
-    with open(QUESTION_LOG_PATH, 'r') as file:
+    # Read using UTF-8 and replace invalid bytes
+    with open(QUESTION_LOG_PATH, 'r', encoding='utf-8', errors='replace') as file:
         reader = csv.reader(file)
         next(reader, None)  # Skip header
         for row in reader:
-            if len(row) >= 3 and row[1] == current_url and row[2] == question:
-                question_exists = True
-                break
-    
+            # Make sure row is long enough to avoid index errors
+            if len(row) >= 3:
+                existing_url = row[1]
+                existing_question = row[2]
+                # Compare with sanitized inputs
+                if existing_url == current_url and existing_question == question:
+                    question_exists = True
+                    break
+
     if not question_exists:
-        with open(QUESTION_LOG_PATH, 'a', newline='') as log_file:
+        with open(QUESTION_LOG_PATH, 'a', newline='', encoding='utf-8', errors='replace') as log_file:
             writer = csv.writer(log_file)
             writer.writerow([button_clicked, current_url, question, date_str, time_str, response_preview])
 
@@ -242,3 +263,53 @@ def add_preferred_url(request):
             return JsonResponse({'status': 'success'})
     
     return JsonResponse({'status': 'failed'}, status=400)
+
+@csrf_exempt
+def folder_path(request):
+    """
+    Upload the folder path for the RAG.
+    """
+    print("[DEBUG] arrived in view with request:", request)
+    if request.method == 'POST':
+        try:
+            # print("[DEBUG] raw body:", request.body)
+            # body = json.loads(request.body)
+            # print("[DEBUG] parsed JSON body:", body)
+            # file_paths = body.get("filePaths",[])
+            # print("[DEBUG] file_paths:", file_paths)
+
+            # if not file_paths:
+            #     return JsonResponse({'error': 'No file paths provided'}, status=400)
+
+            # # Validate the file path exists
+            # if not os.path.exists(file_paths):
+            #     return JsonResponse({'error': 'File not found at path: {file_paths}'}, status=404)
+
+            if 'json_data' not in request.FILES :
+                return JsonResponse({'error': 'No JSON file received'}, status=400)
+        
+            file = request.FILES['json_data']
+        
+            # Read the JSON data from the file
+            json_data = json.loads(file.read())
+            # print("[DEBUG] json_data: ", json_data)
+
+            # Create embeddings for files
+            response_data, status_code = ce.upload_folder(json_data)
+            print("[DEBUG] Flask API response:", response_data)
+            print("[DEBUG] Response status code:", status_code)
+
+            return JsonResponse(response_data, status=status_code)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Only POST requests allowed'}, status=405)
+
+
+# def get_goog_urls(request):
+
+#     search_query = request.GET.get('query', '')
+
+#     list_urls = ds.get_goog_urls(search_query)
+#     return JsonResponse({'resp': list_urls})
