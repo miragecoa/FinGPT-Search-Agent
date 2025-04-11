@@ -6,6 +6,7 @@ from datetime import datetime
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from datascraper import datascraper as ds
+from datascraper import create_embeddings as ce
 from django.shortcuts import render
 from django.http import HttpResponse
 
@@ -262,3 +263,53 @@ def add_preferred_url(request):
             return JsonResponse({'status': 'success'})
     
     return JsonResponse({'status': 'failed'}, status=400)
+
+@csrf_exempt
+def folder_path(request):
+    """
+    Upload the folder path for the RAG.
+    """
+    print("[DEBUG] arrived in view with request:", request)
+    if request.method == 'POST':
+        try:
+            # print("[DEBUG] raw body:", request.body)
+            # body = json.loads(request.body)
+            # print("[DEBUG] parsed JSON body:", body)
+            # file_paths = body.get("filePaths",[])
+            # print("[DEBUG] file_paths:", file_paths)
+
+            # if not file_paths:
+            #     return JsonResponse({'error': 'No file paths provided'}, status=400)
+
+            # # Validate the file path exists
+            # if not os.path.exists(file_paths):
+            #     return JsonResponse({'error': 'File not found at path: {file_paths}'}, status=404)
+
+            if 'json_data' not in request.FILES :
+                return JsonResponse({'error': 'No JSON file received'}, status=400)
+        
+            file = request.FILES['json_data']
+        
+            # Read the JSON data from the file
+            json_data = json.loads(file.read())
+            # print("[DEBUG] json_data: ", json_data)
+
+            # Create embeddings for files
+            response_data, status_code = ce.upload_folder(json_data)
+            print("[DEBUG] Flask API response:", response_data)
+            print("[DEBUG] Response status code:", status_code)
+
+            return JsonResponse(response_data, status=status_code)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Only POST requests allowed'}, status=405)
+
+
+# def get_goog_urls(request):
+
+#     search_query = request.GET.get('query', '')
+
+#     list_urls = ds.get_goog_urls(search_query)
+#     return JsonResponse({'resp': list_urls})
