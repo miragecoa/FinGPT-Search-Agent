@@ -133,7 +133,7 @@ def add_webtext(request):
 def chat_response(request):
     """Process chat response from selected models"""
     question = request.GET.get('question', '')
-    selected_models = request.GET.get('models', 'o1-preview,gpt-4o')
+    selected_models = request.GET.get('models', 'o3-mini,gpt-4.5-preview')
     models = selected_models.split(',')
     use_rag = request.GET.get('use_rag', 'false').lower() == 'true'
     current_url = request.GET.get('current_url', '')
@@ -158,7 +158,7 @@ def chat_response(request):
 def adv_response(request):
     """Process advanced chat response from selected models"""
     question = request.GET.get('question', '')
-    selected_models = request.GET.get('models', 'o1-preview,gpt-4o')
+    selected_models = request.GET.get('models', 'o3-mini,gpt-4.5-preview')
     models = selected_models.split(',')
     use_rag = request.GET.get('use_rag', 'false').lower() == 'true'
     current_url = request.GET.get('current_url', '')

@@ -167,12 +167,12 @@ def create_rag_response(user_input, message_list, model):
         return error_message
 
 
-def create_response(user_input, message_list, model="o1-preview"):
+def create_response(user_input, message_list, model="o3-mini"):
     """
     Creates a response using OpenAI's API and a specified model.
     """
 
-    # If the user selected "o1-preview" or "gpt-4o", we stick with standard openai
+    # If the user selected "o3-preview" or "gpt-4o", we stick with standard openai
     # If "deepseek-R1" is chosen, we call the Deepseek client
     if model == "deepseek-reasoner":
         # Deepseek logic
@@ -230,7 +230,7 @@ def create_response(user_input, message_list, model="o1-preview"):
         # return completion.choices[0].message.content
 
 
-def create_advanced_response(user_input, message_list, model="o1-preview"):
+def create_advanced_response(user_input, message_list, model="o3-mini"):
     """
     Creates an advanced response by searching user-preferred URLs first and then
     falling back to a general web search if needed. Appends metadata and content

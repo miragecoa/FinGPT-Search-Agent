@@ -1,10 +1,10 @@
 // config.js
 
 // Available models
-const availableModels = ["o1-preview", "gpt-4o", "deepseek-reasoner"];
+const availableModels = ["o3-mini", "gpt-4.5-preview", "deepseek-reasoner"];
 
 // Initialize a single selected model
-let selectedModel = "o1-preview";
+let selectedModel = "o3-mini";
 
 function getSelectedModel() {
     return selectedModel;
