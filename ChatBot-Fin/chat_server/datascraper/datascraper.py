@@ -158,12 +158,12 @@ def create_rag_response(user_input, message_list, model):
     """
     try:
         response = cdm_rag.get_rag_response(user_input, model)
-        message_list.append({"role": "system", "content": response})
+        message_list.append({"role": "user", "content": response})
         return response
     except FileNotFoundError as e:
         # Handle the error and return the error message
         error_message = str(e)
-        message_list.append({"role": "system", "content": error_message})
+        message_list.append({"role": "user", "content": error_message})
         return error_message
 
 
