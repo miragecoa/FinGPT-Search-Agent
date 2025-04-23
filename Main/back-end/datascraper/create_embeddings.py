@@ -6,10 +6,6 @@ import pickle
 import numpy as np
 import faiss
 import json
-
-# # Initialize Flask app
-# app = Flask(__name__)
-
 # OpenAI API key
 load_dotenv()
 api_key = os.getenv("API_KEY7")
@@ -111,7 +107,3 @@ def upload_folder(data):
     except Exception as e:
         print(f"[DEBUG] Unexpected error in upload_folder: {str(e)}")
         return {"error": f"Server error: {str(e)}"}, 500
-
-# # Start the Flask app
-# if __name__ == '__main__':
-#     app.run(debug=True)
