@@ -1,8 +1,12 @@
 # environment variables
 chat_interface/backend_modules/.env
 
-# Intellij Idea
+# google cookie
+ChatBot-Fin/chat_server/.google-cookie
+
+# Intellij Idea and VS
 /.idea/
+/.vs/
 FinGPT_Demo.iml
 
 # node modules
@@ -21,3 +25,10 @@ ChatBot-Fin/chat_server/datascraper/faiss_index.idx
 
 # Sphinx doc build
 /docs/build
+
+# webpack build
+/ChatBot-Fin/Extension-ChatBot-Fin/dist
+
+# question logging
+ChatBot-Fin/chat_server/chat_server_app/questionLog.csv
+ChatBot-Fin/chat_server/preferred_urls.txt
