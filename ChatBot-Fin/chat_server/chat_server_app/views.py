@@ -31,7 +31,7 @@ def _ensure_log_file_exists():
 def _log_interaction(button_clicked, current_url, question, response=None):
     """
     Log interaction details with timestamp and response preview.
-    Uses UTF-8 with `errors="replace"` to avoid decode errors for unexpected bytes.
+    Uses UTF-8 with `errors="replace"`
     """
     _ensure_log_file_exists()
 
@@ -39,7 +39,7 @@ def _log_interaction(button_clicked, current_url, question, response=None):
     date_str = now.strftime('%Y-%m-%d')
     time_str = now.strftime('%H:%M:%S')
 
-    # Safe-guard each field in case it contains invalid chars.
+    # Safeguard each field in case it contains invalid chars.
     def safe_str(s):
         # Convert to string, encode to utf-8 ignoring errors, then decode back.
         return str(s).encode('utf-8', errors='replace').decode('utf-8')
@@ -73,34 +73,6 @@ def _log_interaction(button_clicked, current_url, question, response=None):
         with open(QUESTION_LOG_PATH, 'a', newline='', encoding='utf-8', errors='replace') as log_file:
             writer = csv.writer(log_file)
             writer.writerow([button_clicked, current_url, question, date_str, time_str, response_preview])
-
-# View functions
-def Get_A_Number(request):
-    """Return a random number as JSON"""
-    int_response = random.randint(0, 99)
-    return JsonResponse({'resp': int_response})
-
-
-# Function to call the locally run Gemma 2B model
-# def call_local_gemma_model(question):
-#     model_path = os.path.join(os.path.dirname(__file__), 'gemma-2-2b-it')
-#
-#     # Load tokenizer and model for Gemma
-#     tokenizer = AutoTokenizer.from_pretrained(model_path)
-#     model = AutoModelForCausalLM.from_pretrained(
-#         model_path,
-#         device_map="auto"
-#     )
-#
-#     # Tokenize and send the question to the model
-#     input_ids = tokenizer(question, return_tensors="pt").to("cuda")  # Use CUDA
-#     outputs = model.generate(**input_ids, max_length=200)
-#
-#     # Decode the response
-#     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-#
-#     return response
-
 
 # View to handle appending the text from FRONT-END SCRAPER to the message list
 @csrf_exempt
@@ -272,18 +244,6 @@ def folder_path(request):
     print("[DEBUG] arrived in view with request:", request)
     if request.method == 'POST':
         try:
-            # print("[DEBUG] raw body:", request.body)
-            # body = json.loads(request.body)
-            # print("[DEBUG] parsed JSON body:", body)
-            # file_paths = body.get("filePaths",[])
-            # print("[DEBUG] file_paths:", file_paths)
-
-            # if not file_paths:
-            #     return JsonResponse({'error': 'No file paths provided'}, status=400)
-
-            # # Validate the file path exists
-            # if not os.path.exists(file_paths):
-            #     return JsonResponse({'error': 'File not found at path: {file_paths}'}, status=404)
 
             if 'json_data' not in request.FILES :
                 return JsonResponse({'error': 'No JSON file received'}, status=400)
@@ -305,11 +265,3 @@ def folder_path(request):
             return JsonResponse({'error': str(e)}, status=500)
     else:
         return JsonResponse({'error': 'Only POST requests allowed'}, status=405)
-
-
-# def get_goog_urls(request):
-
-#     search_query = request.GET.get('query', '')
-
-#     list_urls = ds.get_goog_urls(search_query)
-#     return JsonResponse({'resp': list_urls})
