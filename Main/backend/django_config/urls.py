@@ -34,4 +34,10 @@ urlpatterns = [
     path('api/get_r2c_stats/', views.get_r2c_stats, name='get_r2c_stats'),
     path('api/get_available_models/', views.get_available_models, name='get_available_models'),
 
+    # Enhanced MCP Management API
+    path('api/health/', views.health_check, name='health_check'),
+    path('api/mcp_servers/', views.get_mcp_servers, name='get_mcp_servers'),
+    path('api/test_mcp/', views.test_mcp_connection, name='test_mcp_connection'),
+    path('api/save_mcp/', views.save_mcp_server, name='save_mcp_server'),
+
 ]

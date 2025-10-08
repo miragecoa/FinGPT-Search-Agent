@@ -7,36 +7,47 @@
     "16": "assets/16x16_icon.png",
     "32": "assets/32x32_icon.png"
   },
+  "action": {
+    "default_title": "FinGPT Enhanced - Click to toggle chat window",
+    "default_icon": {
+      "16": "assets/16x16_icon.png",
+      "32": "assets/32x32_icon.png"
+    }
+  },
   "content_scripts": [
     {
-      "matches": [
-        "https://www.bloomberg.com/*",
-        "https://finance.yahoo.com/*",
-        "https://cdm.finos.org/*",
-        "https://www.finos.org/*",
-        "https://mathcup.com/*",
-        "https://www.cnbc.com/*"
-      ],
+      "matches": ["<all_urls>"],
       "js": [
         "vendors.js",
         "katex.js",
-        "main.js"
+        "content.js"
       ],
       "css": [
         "styles.css"
-      ]
+      ],
+      "run_at": "document_end"
     }
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "permissions": [
     "activeTab",
-    "storage"
+    "storage",
+    "tabs",
+    "scripting"
   ],
   "host_permissions": [
-    "http://127.0.0.1:8000/*"
+    "http://127.0.0.1:8000/*",
+    "http://localhost:8000/*",
+    "<all_urls>"
   ],
   "web_accessible_resources": [
     {
-      "resources": [ "fonts/*.woff", "fonts/*.woff2" ],
+      "resources": [
+        "fonts/*.woff",
+        "fonts/*.woff2"
+      ],
       "matches": [ "<all_urls>" ]
     }
   ]

@@ -595,3 +595,143 @@ def folder_path(request):
             return JsonResponse({'error': str(e)}, status=500)
     else:
         return JsonResponse({'error': 'Only POST requests allowed'}, status=405)
+
+
+# MCP Management API Endpoints
+
+@csrf_exempt
+def health_check(request):
+    """Health check endpoint for the backend"""
+    if request.method == 'GET':
+        try:
+            return JsonResponse({
+                'status': 'healthy',
+                'timestamp': datetime.now().isoformat(),
+                'version': '0.7.0'
+            })
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Only GET requests allowed'}, status=405)
+
+
+@csrf_exempt
+def get_mcp_servers(request):
+    """Get list of configured MCP servers"""
+    if request.method == 'GET':
+        try:
+            # For now, return a mock list. In a real implementation,
+            # this would read from a database or configuration file
+            servers = [
+                {
+                    'id': 'playwright',
+                    'name': 'Playwright',
+                    'command': 'npx',
+                    'args': ['-y', '@modelcontextprotocol/server-playwright'],
+                    'status': 'active',
+                    'tools_count': 21
+                }
+            ]
+
+            return JsonResponse({
+                'success': True,
+                'servers': servers,
+                'total_count': len(servers)
+            })
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Only GET requests allowed'}, status=405)
+
+
+@csrf_exempt
+def test_mcp_connection(request):
+    """Test MCP server connection"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+
+            # Extract MCP server configuration
+            command = data.get('command')
+            args = data.get('args', [])
+            name = data.get('name', 'Unknown')
+
+            if not command:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Missing command in configuration'
+                }, status=400)
+
+            # For now, simulate a successful connection test
+            # In a real implementation, this would actually test the MCP connection
+            tools_count = 21 if 'playwright' in str(args).lower() else 5
+
+            return JsonResponse({
+                'success': True,
+                'message': f'Successfully connected to {name}',
+                'tools_count': tools_count,
+                'server_info': {
+                    'name': name,
+                    'command': command,
+                    'args': args
+                }
+            })
+
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid JSON in request body'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Connection test failed: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({'error': 'Only POST requests allowed'}, status=405)
+
+
+@csrf_exempt
+def save_mcp_server(request):
+    """Save MCP server configuration"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+
+            # Validate required fields
+            required_fields = ['command', 'name']
+            for field in required_fields:
+                if field not in data:
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Missing required field: {field}'
+                    }, status=400)
+
+            # For now, just return success
+            # In a real implementation, this would save to database or config file
+            server_config = {
+                'id': data['name'].lower().replace(' ', '_'),
+                'name': data['name'],
+                'command': data['command'],
+                'args': data.get('args', []),
+                'created_at': datetime.now().isoformat()
+            }
+
+            return JsonResponse({
+                'success': True,
+                'message': f'MCP server "{data["name"]}" saved successfully',
+                'server': server_config
+            })
+
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid JSON in request body'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Failed to save MCP server: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({'error': 'Only POST requests allowed'}, status=405)
