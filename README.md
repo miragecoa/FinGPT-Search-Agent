@@ -37,6 +37,10 @@ This is a demo of FinLLM Leaderboard on HuggingFace's [Open Financial LLM Leader
 
 **Important**: You must start services in this specific order for WebSocket connections to work properly.
 
+#### Step 0: Activate the Python Virtual Environment
+FinGPTenv\Scripts\activate
+FinGPTenv\Scripts\Activate.ps1
+
 #### Step 1: Start MCP Server
 ```bash
 cd mcp-server
