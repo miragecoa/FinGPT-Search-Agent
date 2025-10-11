@@ -1,0 +1,17 @@
+{
+  "name": "fingpt-desktop",
+  "version": "1.0.0",
+  "description": "FinGPT Desktop Assistant",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "NODE_ENV=development electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["finance", "ai", "assistant", "electron"],
+  "author": "FinGPT Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^38.2.2"
+  }
+}

@@ -1,14 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "FinGPT",
+  "name": "FinGPT-Desktop",
   "version": "0.6.0",
-  "description": "A demo to initialize the extension for FinGPT. This is the locally deployed, dual model display version.",
+  "description": "FinGPT Desktop version - A demo to initialize the extension for FinGPT. This is the locally deployed, dual model display version.",
   "icons": {
     "16": "assets/16x16_icon.png",
     "32": "assets/32x32_icon.png"
   },
   "action": {
-    "default_title": "FinGPT Enhanced - Click to toggle chat window",
+    "default_title": "FinGPT Desktop - Click to view status",
+    "default_popup": "popup.html",
     "default_icon": {
       "16": "assets/16x16_icon.png",
       "32": "assets/32x32_icon.png"

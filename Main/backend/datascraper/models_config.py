@@ -43,13 +43,24 @@ MODELS_CONFIG = {
     },
     
     # DeepSeek Models
+    "deepseek-chat": {
+        "provider": "deepseek",
+        "model_name": "deepseek-chat",
+        "supports_rag": True,
+        "supports_mcp": True,
+        "supports_advanced": True,
+        "max_tokens": 4096,
+        "description": "DeepSeek Chat - General purpose chat model",
+        "temperature_range": [0.1, 1.0],
+        "recommended_temperature": 0.7
+    },
     "deepseek-reasoner": {
         "provider": "deepseek",
         "model_name": "deepseek-reasoner",
         "supports_rag": True,
         "supports_mcp": True,
         "supports_advanced": True,
-        "max_tokens": 128000,
+        "max_tokens": 4096,
         "description": "DeepSeek R1 - Advanced reasoning model",
         "temperature_range": [0.5, 0.7],
         "recommended_temperature": 0.6

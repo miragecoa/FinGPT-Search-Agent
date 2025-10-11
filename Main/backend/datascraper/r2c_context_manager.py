@@ -113,22 +113,22 @@ class R2CContextManager:
     def get_context(self, session_id: str, include_compressed: bool = True) -> List[Dict]:
         """
         Get conversation context for a session.
-        
+
         Args:
             session_id: Session identifier
             include_compressed: Whether to include compressed context
-            
+
         Returns:
             List of messages for the session
         """
         session = self.sessions[session_id]
-        
+
         # Always include system prompt as first message with user role
         context = [{
             "role": "user",
             "content": self.system_prompt
         }]
-        
+
         if include_compressed and session["compressed_context"]:
             # Add compressed context with user role
             context.append({
@@ -140,8 +140,21 @@ class R2CContextManager:
         else:
             # Add all messages
             context.extend(session["messages"])
-        
+
         return context
+
+    def prepare_context_messages(self, session_id: str) -> List[Dict]:
+        """
+        Prepare context messages for API calls.
+        Alias for get_context for compatibility.
+
+        Args:
+            session_id: Session identifier
+
+        Returns:
+            List of messages ready for API calls
+        """
+        return self.get_context(session_id, include_compressed=True)
     
     def clear_session(self, session_id: str) -> None:
         """Clear all messages for a session."""

@@ -1,13 +1,14 @@
-// background.js - Service Worker for FinGPT Enhanced
+// background.js - Service Worker for FinGPT WebSocket
 
 class FinGPTBackground {
     constructor() {
+        this.connectionStates = new Map(); // tabId -> connection state
         this.init();
     }
 
     init() {
         this.setupEventListeners();
-        console.log('FinGPT Enhanced background service worker initialized');
+        console.log('FinGPT WebSocket background service worker initialized');
     }
 
     setupEventListeners() {
@@ -16,7 +17,7 @@ class FinGPTBackground {
             this.handleInstallation(details);
         });
 
-        // Handle messages from content scripts and popup
+        // Handle messages from content scripts
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             this.handleMessage(message, sender, sendResponse);
             return true; // Keep message channel open for async responses
@@ -27,27 +28,32 @@ class FinGPTBackground {
             this.handleTabUpdate(tabId, changeInfo, tab);
         });
 
-        // Handle browser action click
+        // Handle browser action click - launch Electron app
         chrome.action.onClicked.addListener((tab) => {
             this.handleActionClick(tab);
         });
     }
 
     handleInstallation(details) {
-        console.log('FinGPT Enhanced installed:', details.reason);
-        
+        console.log('FinGPT WebSocket installed:', details.reason);
+
         if (details.reason === 'install') {
             // Set default settings on first install
             chrome.storage.local.set({
                 fingptSettings: {
-                    apiEndpoint: 'http://127.0.0.1:8000',
-                    defaultModel: 'gpt-4',
-                    autoGetContent: false,
-                    enableMcp: true
+                    websocketEndpoint: 'ws://localhost:8000/ws/',
+                    backendEndpoint: 'http://127.0.0.1:8000',
+                    electronAppPath: null
                 }
             });
 
-            // Open welcome page or show notification
+            // Show notification about Electron app
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: 'icon48.png',
+                title: 'FinGPT Assistant',
+                message: 'Please start the FinGPT Desktop app to use the assistant.'
+            });
             chrome.tabs.create({
                 url: chrome.runtime.getURL('popup.html')
             });
@@ -70,6 +76,32 @@ class FinGPTBackground {
                 case 'CHECK_MCP_STATUS':
                     const mcpStatus = await this.checkMCPStatus();
                     sendResponse({ success: true, data: mcpStatus });
+                    break;
+
+                case 'GET_CONNECTION_STATUS':
+                    // For popup requests, get the active tab
+                    const activeTab = await this.getActiveTab();
+                    const tabId = sender.tab ? sender.tab.id : (activeTab ? activeTab.id : null);
+                    const status = this.getConnectionStatus(tabId);
+                    sendResponse({ success: true, data: status });
+                    break;
+
+                case 'SET_CONNECTION_STATUS':
+                    // For popup requests, get the active tab
+                    const activeTabForSet = await this.getActiveTab();
+                    const targetTabId = sender.tab ? sender.tab.id : (activeTabForSet ? activeTabForSet.id : null);
+                    if (targetTabId) {
+                        await this.setConnectionStatus(targetTabId, message.connected);
+                        sendResponse({ success: true });
+                    } else {
+                        sendResponse({ success: false, error: 'No active tab found' });
+                    }
+                    break;
+
+                case 'CONNECTION_STATUS_CHANGED':
+                    this.updateConnectionStatus(sender.tab.id, message.status);
+                    this.notifyPopupStatusChange(sender.tab.id, message.status);
+                    sendResponse({ success: true });
                     break;
 
                 case 'PING':
@@ -99,28 +131,15 @@ class FinGPTBackground {
     }
 
     async handleActionClick(tab) {
-        try {
-            // Send message to content script to toggle UI
-            const response = await chrome.tabs.sendMessage(tab.id, { action: 'toggleUI' });
-            console.log('UI toggled:', response);
-        } catch (error) {
-            console.error('Error toggling UI:', error);
+        // Show notification to remind user to use Electron app
+        chrome.notifications.create({
+            type: 'basic',
+            iconUrl: 'icon48.png',
+            title: 'FinGPT Assistant',
+            message: 'Please use the FinGPT Desktop app for chatting. Use Ctrl+Shift+F to toggle it.'
+        });
 
-            // If content script is not injected, inject it first
-            try {
-                await this.injectContentScript(tab.id);
-                // Try again after injection
-                setTimeout(async () => {
-                    try {
-                        await chrome.tabs.sendMessage(tab.id, { action: 'toggleUI' });
-                    } catch (e) {
-                        console.error('Failed to toggle UI after injection:', e);
-                    }
-                }, 500);
-            } catch (injectionError) {
-                console.error('Failed to inject content script:', injectionError);
-            }
-        }
+        console.log('Extension icon clicked - user reminded to use desktop app');
     }
 
     async getPageContent(tabId) {
@@ -233,6 +252,61 @@ class FinGPTBackground {
     async getActiveTab() {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         return tab;
+    }
+
+    // Connection status management methods
+    getConnectionStatus(tabId) {
+        if (!tabId) {
+            return {
+                connected: false,
+                sessionId: null,
+                url: null,
+                lastUpdate: null,
+                error: 'No tab ID available'
+            };
+        }
+        return this.connectionStates.get(tabId) || {
+            connected: false,
+            sessionId: null,
+            url: null,
+            lastUpdate: null
+        };
+    }
+
+    async setConnectionStatus(tabId, connected) {
+        try {
+            if (!tabId) {
+                throw new Error('No tab ID available');
+            }
+            const message = {
+                type: connected ? 'CONNECT' : 'DISCONNECT'
+            };
+            await this.sendMessageToTab(tabId, message);
+        } catch (error) {
+            console.error('Error setting connection status:', error);
+            throw error;
+        }
+    }
+
+    updateConnectionStatus(tabId, status) {
+        this.connectionStates.set(tabId, {
+            ...status,
+            lastUpdate: Date.now()
+        });
+    }
+
+    async notifyPopupStatusChange(tabId, status) {
+        // Try to send message to popup if it's open
+        try {
+            chrome.runtime.sendMessage({
+                type: 'UPDATE_POPUP_STATUS',
+                tabId: tabId,
+                status: status
+            });
+        } catch (error) {
+            // Popup might not be open, that's okay
+            console.log('Popup not available for status update');
+        }
     }
 }
 
