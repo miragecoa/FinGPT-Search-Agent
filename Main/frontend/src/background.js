@@ -3,11 +3,15 @@
 class FinGPTBackground {
     constructor() {
         this.connectionStates = new Map(); // tabId -> connection state
+        this.websocket = null;
+        this.reconnectAttempts = 0;
+        this.maxReconnectAttempts = 5;
         this.init();
     }
 
     init() {
         this.setupEventListeners();
+        this.connectToBackend();
         console.log('FinGPT WebSocket background service worker initialized');
     }
 
@@ -306,6 +310,216 @@ class FinGPTBackground {
         } catch (error) {
             // Popup might not be open, that's okay
             console.log('Popup not available for status update');
+        }
+    }
+
+    // WebSocket连接到后端，用于接收浏览器操作命令
+    connectToBackend() {
+        try {
+            // 连接到专门的浏览器操作WebSocket端点
+            this.websocket = new WebSocket('ws://127.0.0.1:8000/ws/browser_control/');
+
+            this.websocket.onopen = () => {
+                console.log('Connected to FinGPT backend for browser control');
+                this.reconnectAttempts = 0;
+            };
+
+            this.websocket.onmessage = (event) => {
+                this.handleBackendMessage(JSON.parse(event.data));
+            };
+
+            this.websocket.onclose = () => {
+                console.log('Disconnected from FinGPT backend');
+                this.attemptReconnect();
+            };
+
+            this.websocket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+        } catch (error) {
+            console.error('Failed to connect to backend:', error);
+            this.attemptReconnect();
+        }
+    }
+
+    attemptReconnect() {
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+            this.reconnectAttempts++;
+            console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
+            setTimeout(() => this.connectToBackend(), 5000);
+        }
+    }
+
+    async handleBackendMessage(data) {
+        console.log('Received backend message:', data);
+
+        switch (data.type) {
+            case 'browser_navigate':
+                await this.executeBrowserNavigate(data.url);
+                break;
+            case 'browser_press_key':
+                await this.executeBrowserPressKey(data.key);
+                break;
+            case 'browser_type':
+                await this.executeBrowserType(data.text);
+                break;
+            case 'browser_click':
+                await this.executeBrowserClick(data.selector);
+                break;
+            case 'browser_info':
+                await this.executeBrowserInfo(data.request_id);
+                break;
+            default:
+                console.log('Unknown message type:', data.type);
+        }
+    }
+
+    async executeBrowserNavigate(url) {
+        try {
+            // 在当前活动标签页中导航到URL
+            const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (activeTab) {
+                await chrome.tabs.update(activeTab.id, { url: url });
+                console.log(`Navigated to: ${url}`);
+
+                // 发送确认消息回后端
+                this.sendBackendResponse({
+                    type: 'browser_navigate_result',
+                    success: true,
+                    url: url,
+                    message: `Successfully navigated to ${url}`
+                });
+            }
+        } catch (error) {
+            console.error('Failed to navigate:', error);
+            this.sendBackendResponse({
+                type: 'browser_navigate_result',
+                success: false,
+                error: error.message
+            });
+        }
+    }
+
+
+
+    async executeBrowserPressKey(key) {
+        try {
+            // 向当前活动标签页的content script发送按键命令
+            const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (activeTab) {
+                await chrome.tabs.sendMessage(activeTab.id, {
+                    type: 'press_key',
+                    key: key
+                });
+                console.log(`Pressed key: ${key}`);
+
+                this.sendBackendResponse({
+                    type: 'browser_press_key_result',
+                    success: true,
+                    key: key,
+                    message: `Successfully pressed key: ${key}`
+                });
+            }
+        } catch (error) {
+            console.error('Failed to press key:', error);
+            this.sendBackendResponse({
+                type: 'browser_press_key_result',
+                success: false,
+                error: error.message
+            });
+        }
+    }
+
+    async executeBrowserType(text) {
+        try {
+            // 向当前活动标签页的content script发送输入命令
+            const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (activeTab) {
+                await chrome.tabs.sendMessage(activeTab.id, {
+                    type: 'type_text',
+                    text: text
+                });
+                console.log(`Typed text: ${text}`);
+
+                this.sendBackendResponse({
+                    type: 'browser_type_result',
+                    success: true,
+                    text: text,
+                    message: `Successfully typed: ${text}`
+                });
+            }
+        } catch (error) {
+            console.error('Failed to type text:', error);
+            this.sendBackendResponse({
+                type: 'browser_type_result',
+                success: false,
+                error: error.message
+            });
+        }
+    }
+
+    async executeBrowserClick(selector) {
+        try {
+            // 向当前活动标签页的content script发送点击命令
+            const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (activeTab) {
+                await chrome.tabs.sendMessage(activeTab.id, {
+                    type: 'click_element',
+                    selector: selector
+                });
+                console.log(`Clicked element: ${selector}`);
+
+                this.sendBackendResponse({
+                    type: 'browser_click_result',
+                    success: true,
+                    selector: selector,
+                    message: `Successfully clicked element: ${selector}`
+                });
+            }
+        } catch (error) {
+            console.error('Failed to click element:', error);
+            this.sendBackendResponse({
+                type: 'browser_click_result',
+                success: false,
+                error: error.message
+            });
+        }
+    }
+
+    async executeBrowserInfo(requestId = 'default') {
+        try {
+            // 向当前活动标签页的content script请求页面信息
+            const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (activeTab) {
+                const response = await chrome.tabs.sendMessage(activeTab.id, {
+                    type: 'get_page_info'
+                });
+
+                console.log('Got page info:', response);
+
+                this.sendBackendResponse({
+                    type: 'browser_info_result',
+                    success: true,
+                    pageInfo: response,
+                    request_id: requestId,
+                    message: 'Successfully retrieved page information'
+                });
+            }
+        } catch (error) {
+            console.error('Failed to get page info:', error);
+            this.sendBackendResponse({
+                type: 'browser_info_result',
+                success: false,
+                error: error.message,
+                request_id: requestId
+            });
+        }
+    }
+
+    sendBackendResponse(data) {
+        if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
+            this.websocket.send(JSON.stringify(data));
         }
     }
 }

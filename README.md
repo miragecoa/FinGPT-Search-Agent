@@ -4,6 +4,125 @@ Vision: A financial agent to assist users in information retrieval and data anal
 
 This is a demo of FinLLM Leaderboard on HuggingFace's [Open Financial LLM Leaderboard](https://huggingface.co/spaces/TheFinAI/Open-Financial-LLM-Leaderboard).
 
+## 🚀 Quick Start Guide
+
+### Prerequisites
+- Python 3.10+
+- Node.js 14+
+- Git
+
+### Installation & Setup
+
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd FinGPT-Search-Agent
+   ```
+
+2. **Install Python dependencies**:
+   ```bash
+   python scripts/install_all.py
+   # or
+   make install
+   ```
+
+3. **Install FinGPT-Desktop dependencies**:
+   ```bash
+   cd FinGPT-desktop
+   npm install
+   cd ..
+   ```
+
+### 🔧 Starting the System
+
+**Important**: You must start services in this specific order for WebSocket connections to work properly.
+
+#### Step 1: Start MCP Server
+```bash
+cd mcp-server
+python server.py
+```
+- Server will run on `http://127.0.0.1:9000`
+- Provides browser_navigate and other tools
+
+#### Step 2: Start Django Backend (ASGI)
+```bash
+cd Main/backend
+daphne -b 127.0.0.1 -p 8000 django_config.asgi:application
+```
+- **Important**: Use `daphne` (ASGI server), NOT `python manage.py runserver` (WSGI)
+- WSGI servers don't support WebSocket connections
+- Server will run on `http://127.0.0.1:8000`
+
+#### Step 3: Start FinGPT-Desktop Application
+```bash
+cd FinGPT-desktop
+npm start
+```
+- Electron desktop application will launch
+- Should automatically connect to the backend
+
+### ✅ Verification
+
+1. **Check MCP Server**: Visit `http://127.0.0.1:9000` - should show FastMCP interface
+2. **Check Django Backend**: Look for WebSocket connection logs:
+   ```
+   WSCONNECTING /ws/chat/
+   WSCONNECT /ws/chat/
+   Chat WebSocket connected
+   ```
+3. **Check Desktop App**: Status should show "Connected"
+
+### 🤖 Agent Mode Features
+
+The system now includes an advanced Agent Mode with tool calling capabilities:
+
+#### Features
+- **Browser Navigate Tool**: Navigate to URLs and extract page information
+- **Multi-turn Conversations**: Complex reasoning with tool usage
+- **Real-time Tool Status**: See tool calling progress in real-time
+- **Context Management**: Maintains conversation history with R2C compression
+
+#### Usage
+1. Open FinGPT-Desktop application
+2. ✅ Check "Agent Mode" checkbox
+3. Ask questions that involve web navigation:
+   ```
+   Navigate to https://httpbin.org/get and tell me what you find
+   ```
+
+#### Expected Behavior
+When using Agent Mode, you'll see:
+1. **User**: Your question
+2. **System**: 🔧 "Analyzing request and selecting appropriate tools..."
+3. **System**: 🔧 "Calling Tool: browser_navigate"
+4. **System**: ✅ "Tool execution completed successfully"
+5. **Assistant**: Comprehensive response with extracted information
+
+### 🔧 Troubleshooting
+
+#### WebSocket Connection Issues
+- **Problem**: "Not Found: /ws/chat/" errors
+- **Solution**: Make sure you're using `daphne` (ASGI) not `python manage.py runserver` (WSGI)
+
+#### Agent Mode Not Working
+- **Check**: MCP server is running on port 9000
+- **Check**: Agent Mode checkbox is enabled
+- **Check**: Backend logs show tool calling activity
+
+#### Desktop App Won't Connect
+- **Check**: All three services are running
+- **Check**: No firewall blocking ports 8000 or 9000
+- **Check**: Backend shows WebSocket connection logs
+
+### 🔑 Environment Variables
+Create `Main/backend/.env` with:
+```
+API_KEY7=your_openai_api_key
+DEEPSEEK_API_KEY=your_deepseek_api_key
+ANTHROPIC_API_KEY=your_anthropic_api_key
+```
+
 ## Key Features
 
 1. **Independent Desktop Application**: FinGPT-desktop provides a standalone chat interface that automatically opens on startup

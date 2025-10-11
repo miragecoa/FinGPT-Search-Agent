@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinGPT Status</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="popup-container">
+        <div class="header">
+            <div class="logo">
+                <img src="assets/32x32_icon.png" alt="FinGPT" class="logo-icon">
+                <h1>FinGPT</h1>
+            </div>
+            <div class="version">v0.6.0</div>
+        </div>
+
+        <div class="status-section">
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <div class="status-text" id="statusText">Checking connection...</div>
+            </div>
+
+            <div class="connection-info" id="connectionInfo">
+                <div class="info-item">
+                    <span class="label">Server:</span>
+                    <span class="value" id="serverUrl">localhost:8000</span>
+                </div>
+                <div class="info-item" id="sessionInfo" style="display: none;">
+                    <span class="label">Session:</span>
+                    <span class="value" id="sessionId">-</span>
+                </div>
+                <div class="info-item" id="pageInfo" style="display: none;">
+                    <span class="label">Page:</span>
+                    <span class="value" id="currentPage">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-section">
+            <button class="control-btn" id="connectBtn" disabled>
+                <span class="btn-text" id="btnText">Connecting...</span>
+            </button>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

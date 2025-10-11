@@ -20,6 +20,7 @@ class FinGPTClient {
         this.settingsBtn = document.getElementById('settingsBtn');
         this.modelSelect = document.getElementById('modelSelect');
         this.ragCheckbox = document.getElementById('ragCheckbox');
+        this.agentCheckbox = document.getElementById('agentCheckbox');
         this.status = document.getElementById('status');
         this.loading = document.getElementById('loading');
     }
@@ -122,11 +123,24 @@ class FinGPTClient {
 
             case 'stream_start':
                 this.showLoading(false);
-                this.currentStreamMessage = this.addMessage('assistant', '', true); // 创建空的助手消息
+                // 不在这里创建消息泡泡，等到真正的stream_chunk时再创建
                 console.log('Stream started with model:', data.model);
                 break;
 
             case 'stream_content':
+                if (this.currentStreamMessage) {
+                    this.appendToMessage(this.currentStreamMessage, data.content);
+                }
+                break;
+
+            case 'stream_chunk':
+                // Agent模式下的流式数据 - 总是为最终回复创建新的消息泡泡
+                if (!this.currentStreamMessage) {
+                    // 创建新的消息泡泡用于最终回复（在工具调用之后）
+                    this.currentStreamMessage = this.addMessage('assistant', '', true);
+                    this.showLoading(false);
+                    console.log('Created new stream message bubble for final response at:', new Date().toLocaleTimeString());
+                }
                 if (this.currentStreamMessage) {
                     this.appendToMessage(this.currentStreamMessage, data.content);
                 }
@@ -142,6 +156,8 @@ class FinGPTClient {
                 }
                 this.currentStreamMessage = null;
                 this.showStatus('');
+                // Reset send button when stream ends
+                this.setSendButtonState('send');
                 break;
 
             case 'response_complete':
@@ -149,6 +165,8 @@ class FinGPTClient {
                     console.log('R2C Stats:', data.r2c_stats);
                 }
                 console.log('Response completed with model:', data.model);
+                // Reset send button when response completes
+                this.setSendButtonState('send');
                 break;
 
             case 'processing':
@@ -162,12 +180,26 @@ class FinGPTClient {
                 if (data.r2c_stats) {
                     console.log('R2C Stats:', data.r2c_stats);
                 }
+                // Reset send button for non-stream responses
+                this.setSendButtonState('send');
+                break;
+
+            case 'tool_calling':
+                // 显示工具调用状态
+                this.addToolMessage('calling', data.message, data.tool_details);
+                break;
+
+            case 'tool_result':
+                // 显示工具执行结果
+                this.addToolMessage('result', data.message, data.tool_details);
                 break;
 
             case 'error':
                 this.showLoading(false);
                 this.showStatus('');
                 this.addMessage('system', `Error: ${data.message}`);
+                // Reset send button on error
+                this.setSendButtonState('send');
                 break;
 
             default:
@@ -176,23 +208,56 @@ class FinGPTClient {
     }
     
     sendMessage() {
+        // Check if we're in stop mode
+        if (this.sendBtn.textContent === 'Stop') {
+            this.stopGeneration();
+            return;
+        }
+
         const message = this.messageInput.value.trim();
         if (!message) return;
-        
+
         // Add user message to chat
         this.addMessage('user', message);
-        
+
         // Clear input
         this.messageInput.value = '';
         this.messageInput.style.height = 'auto';
-        
+
+        // Change button to Stop
+        this.setSendButtonState('stop');
+
         // Send to WebSocket
         this.sendWebSocketMessage({
             type: 'chat_message',
             message: message,
             models: [this.modelSelect.value],
-            use_rag: this.ragCheckbox.checked
+            use_rag: this.ragCheckbox.checked,
+            use_agent: this.agentCheckbox.checked
         });
+    }
+
+    stopGeneration() {
+        // Send stop signal to backend
+        this.sendWebSocketMessage({
+            type: 'stop_generation'
+        });
+
+        // Reset button state
+        this.setSendButtonState('send');
+
+        // Add stop message to chat
+        this.addMessage('system', '⏹️ Generation stopped by user');
+    }
+
+    setSendButtonState(state) {
+        if (state === 'stop') {
+            this.sendBtn.textContent = 'Stop';
+            this.sendBtn.style.backgroundColor = '#dc3545';
+        } else {
+            this.sendBtn.textContent = 'Send';
+            this.sendBtn.style.backgroundColor = '#007bff';
+        }
     }
     
     addMessage(role, content, isStream = false) {
@@ -217,6 +282,64 @@ class FinGPTClient {
 
         // 返回消息元素以便流式更新
         return messageDiv;
+    }
+
+    addToolMessage(type, message, toolDetails = null) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message system-message tool-message`;
+
+        const toolHeader = document.createElement('div');
+        toolHeader.className = 'tool-header';
+
+        const icon = type === 'calling' ? '🔧' : '✅';
+        const headerText = document.createElement('span');
+        headerText.textContent = `${icon} ${message}`;
+
+        toolHeader.appendChild(headerText);
+
+        // 如果有工具详情，添加展开按钮
+        if (toolDetails) {
+            const expandButton = document.createElement('button');
+            expandButton.className = 'tool-expand-btn';
+            expandButton.textContent = '▼';
+            expandButton.onclick = () => this.toggleToolDetails(expandButton, toolDetails);
+            toolHeader.appendChild(expandButton);
+
+            // 创建详情容器（初始隐藏）
+            const detailsDiv = document.createElement('div');
+            detailsDiv.className = 'tool-details hidden';
+
+            const detailsContent = document.createElement('pre');
+            detailsContent.textContent = JSON.stringify(toolDetails, null, 2);
+            detailsDiv.appendChild(detailsContent);
+
+            messageDiv.appendChild(toolHeader);
+            messageDiv.appendChild(detailsDiv);
+        } else {
+            messageDiv.appendChild(toolHeader);
+        }
+
+        // Remove welcome message if it exists
+        const welcome = this.chatArea.querySelector('.welcome');
+        if (welcome) {
+            welcome.remove();
+        }
+
+        this.chatArea.appendChild(messageDiv);
+        this.chatArea.scrollTop = this.chatArea.scrollHeight;
+    }
+
+    toggleToolDetails(button, toolDetails) {
+        const messageDiv = button.closest('.tool-message');
+        const detailsDiv = messageDiv.querySelector('.tool-details');
+
+        if (detailsDiv.classList.contains('hidden')) {
+            detailsDiv.classList.remove('hidden');
+            button.textContent = '▲';
+        } else {
+            detailsDiv.classList.add('hidden');
+            button.textContent = '▼';
+        }
     }
 
     appendToMessage(messageElement, content) {
