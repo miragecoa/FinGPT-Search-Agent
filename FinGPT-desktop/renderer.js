@@ -128,6 +128,12 @@ class FinGPTClient {
                 break;
 
             case 'stream_content':
+                // 非agent模式的流式数据 - 如果没有消息泡泡就创建一个
+                if (!this.currentStreamMessage) {
+                    this.currentStreamMessage = this.addMessage('assistant', '', true);
+                    this.showLoading(false);
+                    console.log('Created stream message bubble for non-agent mode');
+                }
                 if (this.currentStreamMessage) {
                     this.appendToMessage(this.currentStreamMessage, data.content);
                 }

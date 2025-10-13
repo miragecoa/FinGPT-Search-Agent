@@ -5,8 +5,10 @@ import json
 import re
 import asyncio
 import logging
+import uuid
 from typing import Dict, Any, List, Optional
 from channels.layers import get_channel_layer
+from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -154,7 +156,6 @@ Important:
                     page_url = page_info.get('url', '')
 
                     # 检查URL是否匹配（考虑重定向）
-                    from urllib.parse import urlparse
                     target_domain = urlparse(url).netloc
                     page_domain = urlparse(page_url).netloc
 
@@ -176,7 +177,6 @@ Important:
                             content = content[:3000] + '...'
 
                         # 生成页面ID
-                        import uuid
                         page_id = f"page_{str(uuid.uuid4())[:8]}"
 
                         # 存储页面信息到websocket_consumer（如果可用）
@@ -215,7 +215,6 @@ Important:
                             content = content[:3000] + '...'
 
                         # 生成页面ID
-                        import uuid
                         page_id = f"page_{str(uuid.uuid4())[:8]}"
 
                         # 存储页面信息到websocket_consumer（如果可用）
